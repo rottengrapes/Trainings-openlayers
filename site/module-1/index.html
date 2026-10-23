@@ -858,7 +858,7 @@
   <span class="md-ellipsis">
     
   
-    Module 3 - GeoServer & OpenLayers
+    Module 3 - GeoServer & PostGIS
   
 
     
@@ -886,7 +886,7 @@
   <span class="md-ellipsis">
     
   
-    Module 4 - PostGIS & OpenLayers
+    Module 4 - Vector Styling & Interaction
   
 
     
@@ -914,7 +914,7 @@
   <span class="md-ellipsis">
     
   
-    Module 5 - Vector Styling & Interaction
+    Module 5 - Map Interactions & Controls
   
 
     
@@ -1675,11 +1675,11 @@
 <li>At <strong>Zoom 0</strong>, the entire circumference of the Earth (~40,075 km) is rendered in a single 256x256 pixel tile (<span class="arithmatex">\(\approx 156,543\text{ meters/pixel}\)</span>).</li>
 <li>With each increment in zoom level (<span class="arithmatex">\(z+1\)</span>), resolution is cut exactly in half, doubling map detail in both dimensions.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/Map.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/View.js&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/Map.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/View.js'</span><span class="p">;</span>
 
 <span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">'map'</span><span class="p">,</span>
 <span class="w">  </span><span class="nx">view</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">View</span><span class="p">({</span>
 <span class="w">    </span><span class="nx">center</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="mf">0</span><span class="p">],</span><span class="w"> </span><span class="c1">// Center coordinate in Web Mercator meters</span>
 <span class="w">    </span><span class="nx">zoom</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="w">         </span><span class="c1">// Initial zoom scale</span>
@@ -1709,10 +1709,10 @@
 <li><strong><code>VectorTileLayer</code> (<code>ol/layer/VectorTile</code>):</strong> Renders tiled vector geometries (MVT/PBF). Combines the bandwidth efficiency of tile pyramids with the visual sharpness and client-side styling of vector data.</li>
 <li><strong><code>WebGLTileLayer</code> (<code>ol/layer/WebGLTile</code>):</strong> Hardware-accelerated tile renderer optimized for Cloud-Optimized GeoTIFFs (COG) and dynamic multi-band raster analysis.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Tile.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/OSM.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Vector.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">VectorSource</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/Vector.js&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Tile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/OSM.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Vector.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">VectorSource</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/Vector.js'</span><span class="p">;</span>
 
 <span class="c1">// TileLayer: Raster imagery tiles</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">baseTileLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">TileLayer</span><span class="p">({</span>
@@ -1766,14 +1766,14 @@
 <div class="highlight"><pre><span></span><code><span class="cp">&lt;!DOCTYPE html&gt;</span>
 <span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
   <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">script</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;https://cdn.jsdelivr.net/npm/ol@v8.2.0/dist/ol.js&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;https://cdn.jsdelivr.net/npm/ol@v8.2.0/ol.css&quot;</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">script</span> <span class="na">src</span><span class="o">=</span><span class="s">"https://cdn.jsdelivr.net/npm/ol@v8.2.0/dist/ol.js"</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">"stylesheet"</span> <span class="na">href</span><span class="o">=</span><span class="s">"https://cdn.jsdelivr.net/npm/ol@v8.2.0/ol.css"</span><span class="p">&gt;</span>
   <span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
   <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">&quot;map&quot;</span> <span class="na">style</span><span class="o">=</span><span class="s">&quot;width: 100%; height: 400px;&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">"map"</span> <span class="na">style</span><span class="o">=</span><span class="s">"width: 100%; height: 400px;"</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
     <span class="p">&lt;</span><span class="nt">script</span><span class="p">&gt;</span>
 <span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ol</span><span class="p">.</span><span class="nb">Map</span><span class="p">({</span>
-<span class="w">        </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">'map'</span><span class="p">,</span>
 <span class="w">        </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="ow">new</span><span class="w"> </span><span class="nx">ol</span><span class="p">.</span><span class="nx">layer</span><span class="p">.</span><span class="nx">Tile</span><span class="p">({</span><span class="w"> </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ol</span><span class="p">.</span><span class="nx">source</span><span class="p">.</span><span class="nx">OSM</span><span class="p">()</span><span class="w"> </span><span class="p">})],</span>
 <span class="w">        </span><span class="nx">view</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ol</span><span class="p">.</span><span class="nx">View</span><span class="p">({</span><span class="w"> </span><span class="nx">center</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="mf">0</span><span class="p">],</span><span class="w"> </span><span class="nx">zoom</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="p">})</span>
 <span class="w">      </span><span class="p">});</span>
@@ -1786,26 +1786,26 @@
 <div class="highlight"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>ol
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><span class="c1">// main.js</span>
-<span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/Map.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/View.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Tile.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/OSM.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="s1">&#39;ol/ol.css&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// CRITICAL: Required for controls and overlays</span>
+<span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/Map.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/View.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Tile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/OSM.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">'ol/ol.css'</span><span class="p">;</span><span class="w"> </span><span class="c1">// CRITICAL: Required for controls and overlays</span>
 
 <span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">'map'</span><span class="p">,</span>
 <span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="ow">new</span><span class="w"> </span><span class="nx">TileLayer</span><span class="p">({</span><span class="w"> </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">OSM</span><span class="p">()</span><span class="w"> </span><span class="p">})],</span>
 <span class="w">  </span><span class="nx">view</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">View</span><span class="p">({</span><span class="w"> </span><span class="nx">center</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="mf">0</span><span class="p">],</span><span class="w"> </span><span class="nx">zoom</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="p">})</span>
 <span class="p">});</span>
 </code></pre></div>
 <h3 id="43-react-nextjs-integration-pattern">4.3 React / Next.js Integration Pattern</h3>
 <p>In React, bind the map to a DOM element using <code>useRef</code> inside <code>useEffect</code>, and dispose of it on unmount to prevent memory leaks:</p>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useEffect</span><span class="p">,</span><span class="w"> </span><span class="nx">useRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/Map.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/View.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Tile.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/OSM.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="s1">&#39;ol/ol.css&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useEffect</span><span class="p">,</span><span class="w"> </span><span class="nx">useRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'react'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/Map.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/View.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Tile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/OSM.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">'ol/ol.css'</span><span class="p">;</span>
 
 <span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">MapComponent</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">mapElement</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
@@ -1829,7 +1829,7 @@
 <span class="w">    </span><span class="p">};</span>
 <span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
 
-<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">mapElement</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;100%&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;100vh&#39;</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">mapElement</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="s1">'100%'</span><span class="p">,</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="s1">'100vh'</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span><span class="p">/&gt;;</span>
 <span class="p">}</span>
 </code></pre></div>
 <hr />
@@ -1849,19 +1849,19 @@ npx<span class="w"> </span>vite
 </div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="cp">&lt;!DOCTYPE html&gt;</span>
-<span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="o">=</span><span class="s">"en"</span><span class="p">&gt;</span>
   <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">charset</span><span class="o">=</span><span class="s">&quot;UTF-8&quot;</span> <span class="p">/&gt;</span>
-    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">name</span><span class="o">=</span><span class="s">&quot;viewport&quot;</span> <span class="na">content</span><span class="o">=</span><span class="s">&quot;width=device-width, initial-scale=1.0&quot;</span> <span class="p">/&gt;</span>
+    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">charset</span><span class="o">=</span><span class="s">"UTF-8"</span> <span class="p">/&gt;</span>
+    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">name</span><span class="o">=</span><span class="s">"viewport"</span> <span class="na">content</span><span class="o">=</span><span class="s">"width=device-width, initial-scale=1.0"</span> <span class="p">/&gt;</span>
     <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>My First OpenLayers Map<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;./style.css&quot;</span> <span class="p">/&gt;</span>
+    <span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">"stylesheet"</span> <span class="na">href</span><span class="o">=</span><span class="s">"./style.css"</span> <span class="p">/&gt;</span>
   <span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
   <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
     <span class="cm">&lt;!-- Map target container --&gt;</span>
-    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">&quot;map-container&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">"map-container"</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
 
     <span class="cm">&lt;!-- Application entry point --&gt;</span>
-    <span class="p">&lt;</span><span class="nt">script</span> <span class="na">type</span><span class="o">=</span><span class="s">&quot;module&quot;</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;./main.js&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">script</span> <span class="na">type</span><span class="o">=</span><span class="s">"module"</span> <span class="na">src</span><span class="o">=</span><span class="s">"./main.js"</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
   <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
 <span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
 </code></pre></div>
@@ -1882,15 +1882,15 @@ npx<span class="w"> </span>vite
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/Map.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/View.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Tile.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/OSM.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="s1">&#39;ol/ol.css&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Mandates styling for controls, scale lines, and popups</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/Map.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/View.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Tile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/OSM.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">'ol/ol.css'</span><span class="p">;</span><span class="w"> </span><span class="c1">// Mandates styling for controls, scale lines, and popups</span>
 
 <span class="c1">// Initialize Map instance</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;map-container&#39;</span><span class="p">,</span><span class="w"> </span><span class="c1">// Target HTML element ID</span>
+<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">'map-container'</span><span class="p">,</span><span class="w"> </span><span class="c1">// Target HTML element ID</span>
 <span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">TileLayer</span><span class="p">({</span>
 <span class="w">      </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">OSM</span><span class="p">()</span><span class="w">      </span><span class="c1">// OpenStreetMap public tile server</span>
@@ -1958,7 +1958,7 @@ npx<span class="w"> </span>vite
 <p>However, Mercator distorts area significantly as distance from the equator increases: Greenland appears roughly equal in size to the continent of Africa on screen, despite Africa being 14 times larger in reality.</p>
 <h3 id="62-transforming-coordinates-fromlonlat-and-tolonlat">6.2 Transforming Coordinates (<code>fromLonLat</code> and <code>toLonLat</code>)</h3>
 <p>OpenLayers defaults internally to <code>EPSG:3857</code>. When working with human-readable coordinates (e.g. GPS locations), you must reproject:</p>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">,</span><span class="w"> </span><span class="nx">toLonLat</span><span class="p">,</span><span class="w"> </span><span class="nx">transform</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/proj.js&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">,</span><span class="w"> </span><span class="nx">toLonLat</span><span class="p">,</span><span class="w"> </span><span class="nx">transform</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/proj.js'</span><span class="p">;</span>
 
 <span class="c1">// 1. Convert WGS 84 [Longitude, Latitude] degrees -&gt; Web Mercator [X, Y] meters:</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">puneCenter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">([</span><span class="mf">73.8567</span><span class="p">,</span><span class="w"> </span><span class="mf">18.5204</span><span class="p">]);</span>
@@ -1966,10 +1966,10 @@ npx<span class="w"> </span>vite
 
 <span class="c1">// 2. Convert Web Mercator [X, Y] meters -&gt; WGS 84 [Longitude, Latitude] degrees:</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">lonLatCoords</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">toLonLat</span><span class="p">(</span><span class="nx">map</span><span class="p">.</span><span class="nx">getView</span><span class="p">().</span><span class="nx">getCenter</span><span class="p">());</span>
-<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Current Lon/Lat:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">lonLatCoords</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'Current Lon/Lat:'</span><span class="p">,</span><span class="w"> </span><span class="nx">lonLatCoords</span><span class="p">);</span>
 
 <span class="c1">// 3. Generic transformation between any two registered CRS:</span>
-<span class="kd">const</span><span class="w"> </span><span class="nx">customCoords</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">transform</span><span class="p">([</span><span class="mf">73.8567</span><span class="p">,</span><span class="w"> </span><span class="mf">18.5204</span><span class="p">],</span><span class="w"> </span><span class="s1">&#39;EPSG:4326&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;EPSG:3857&#39;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">customCoords</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">transform</span><span class="p">([</span><span class="mf">73.8567</span><span class="p">,</span><span class="w"> </span><span class="mf">18.5204</span><span class="p">],</span><span class="w"> </span><span class="s1">'EPSG:4326'</span><span class="p">,</span><span class="w"> </span><span class="s1">'EPSG:3857'</span><span class="p">);</span>
 </code></pre></div>
 <blockquote>
 <p><strong>The "Null Island" Gotcha:</strong>
@@ -1989,27 +1989,27 @@ Incorrect: [18.5204, 73.8567]  →  [Lat, Lon]  →  Southern Indian Ocean near 
 <p>OpenLayers natively packages mathematical definitions for <code>EPSG:4326</code> and <code>EPSG:3857</code>. For regional or national projections (such as British National Grid <code>EPSG:27700</code> or Indian UTM Zone 43N <code>EPSG:32643</code>), integrate the <code>proj4</code> library:</p>
 <div class="highlight"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>proj4
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">proj4</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;proj4&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">register</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/proj/proj4.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">get</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">getProjection</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/proj.js&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">proj4</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'proj4'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">register</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/proj/proj4.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">get</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">getProjection</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/proj.js'</span><span class="p">;</span>
 
 <span class="c1">// 1. Define projection string (from https://epsg.io/32643)</span>
 <span class="nx">proj4</span><span class="p">.</span><span class="nx">defs</span><span class="p">(</span>
-<span class="w">  </span><span class="s1">&#39;EPSG:32643&#39;</span><span class="p">,</span>
-<span class="w">  </span><span class="s1">&#39;+proj=utm +zone=43 +datum=WGS84 +units=m +no_defs&#39;</span>
+<span class="w">  </span><span class="s1">'EPSG:32643'</span><span class="p">,</span>
+<span class="w">  </span><span class="s1">'+proj=utm +zone=43 +datum=WGS84 +units=m +no_defs'</span>
 <span class="p">);</span>
 
 <span class="c1">// 2. Register definitions with OpenLayers</span>
 <span class="nx">register</span><span class="p">(</span><span class="nx">proj4</span><span class="p">);</span>
 
 <span class="c1">// 3. OpenLayers can now transform to/from EPSG:32643 automatically</span>
-<span class="kd">const</span><span class="w"> </span><span class="nx">utmProj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">getProjection</span><span class="p">(</span><span class="s1">&#39;EPSG:32643&#39;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">utmProj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">getProjection</span><span class="p">(</span><span class="s1">'EPSG:32643'</span><span class="p">);</span>
 </code></pre></div>
 <hr />
 <h2 id="7-advanced-view-navigation-constraints">7. Advanced View Navigation &amp; Constraints</h2>
 <p>In enterprise applications, you must constrain camera movement to prevent users from panning into unpopulated coordinate space or zooming beyond available data resolutions.</p>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/View.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/proj.js&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/View.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/proj.js'</span><span class="p">;</span>
 
 <span class="kd">const</span><span class="w"> </span><span class="nx">view</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">View</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">center</span><span class="o">:</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">([</span><span class="mf">73.8567</span><span class="p">,</span><span class="w"> </span><span class="mf">18.5204</span><span class="p">]),</span>
@@ -2051,18 +2051,18 @@ Controls (UI Elements in DOM)                     Interactions (Canvas Gesture L
 </code></pre></div>
 If an interaction (such as <code>Draw</code> or <code>Select</code>) handles the event, it can stop propagation to prevent default canvas behaviors (like panning).</p>
 <h3 id="82-customizing-controls-and-interactions">8.2 Customizing Controls and Interactions</h3>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/Map.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">defaults</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">defaultControls</span><span class="p">,</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="p">,</span><span class="w"> </span><span class="nx">FullScreen</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/control.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">defaults</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">defaultInteractions</span><span class="p">,</span><span class="w"> </span><span class="nx">DragRotateAndZoom</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/interaction.js&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/Map.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">defaults</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">defaultControls</span><span class="p">,</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="p">,</span><span class="w"> </span><span class="nx">FullScreen</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/control.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">defaults</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">defaultInteractions</span><span class="p">,</span><span class="w"> </span><span class="nx">DragRotateAndZoom</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/interaction.js'</span><span class="p">;</span>
 
 <span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">'map'</span><span class="p">,</span>
 <span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="cm">/* ... */</span><span class="p">],</span>
 <span class="w">  </span><span class="nx">view</span><span class="o">:</span><span class="w"> </span><span class="nx">view</span><span class="p">,</span>
 
 <span class="w">  </span><span class="c1">// Extend default controls (Zoom + Attribution) with ScaleLine and FullScreen</span>
 <span class="w">  </span><span class="nx">controls</span><span class="o">:</span><span class="w"> </span><span class="nx">defaultControls</span><span class="p">().</span><span class="nx">extend</span><span class="p">([</span>
-<span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="p">({</span><span class="w"> </span><span class="nx">units</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;metric&#39;</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="p">({</span><span class="w"> </span><span class="nx">units</span><span class="o">:</span><span class="w"> </span><span class="s1">'metric'</span><span class="w"> </span><span class="p">}),</span>
 <span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">FullScreen</span><span class="p">()</span>
 <span class="w">  </span><span class="p">]),</span>
 
@@ -2168,19 +2168,19 @@ npm<span class="w"> </span>install<span class="w"> </span>--save-dev<span class=
 </ol>
 <hr />
 <h4 id="example-implementation-mainjs">Example Implementation (<code>main.js</code>):</h4>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/Map.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/View.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Tile.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/OSM.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/control/ScaleLine.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">FullScreen</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/control/FullScreen.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">defaults</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">defaultControls</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/control/defaults.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/proj.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="s1">&#39;ol/ol.css&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/Map.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/View.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Tile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/OSM.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/control/ScaleLine.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">FullScreen</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/control/FullScreen.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">defaults</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">defaultControls</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/control/defaults.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/proj.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">'ol/ol.css'</span><span class="p">;</span>
 
 <span class="c1">// 1. Initialize OpenLayers Map</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">'map'</span><span class="p">,</span>
 <span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">TileLayer</span><span class="p">({</span>
 <span class="w">      </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">OSM</span><span class="p">(),</span>
@@ -2194,7 +2194,7 @@ npm<span class="w"> </span>install<span class="w"> </span>--save-dev<span class=
 <span class="w">    </span><span class="nx">maxZoom</span><span class="o">:</span><span class="w"> </span><span class="mf">18</span>
 <span class="w">  </span><span class="p">}),</span>
 <span class="w">  </span><span class="nx">controls</span><span class="o">:</span><span class="w"> </span><span class="nx">defaultControls</span><span class="p">().</span><span class="nx">extend</span><span class="p">([</span>
-<span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="p">({</span><span class="w"> </span><span class="nx">units</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;metric&#39;</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="p">({</span><span class="w"> </span><span class="nx">units</span><span class="o">:</span><span class="w"> </span><span class="s1">'metric'</span><span class="w"> </span><span class="p">}),</span>
 <span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">FullScreen</span><span class="p">()</span>
 <span class="w">  </span><span class="p">])</span>
 <span class="p">});</span>

@@ -343,7 +343,7 @@
   <span class="md-ellipsis">
     
   
-    Module 3 - GeoServer & OpenLayers
+    Module 3 - GeoServer & PostGIS
   
 
     
@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    Module 4 - PostGIS & OpenLayers
+    Module 4 - Vector Styling & Interaction
   
 
     
@@ -399,7 +399,7 @@
   <span class="md-ellipsis">
     
   
-    Module 5 - Vector Styling & Interaction
+    Module 5 - Map Interactions & Controls
   
 
     
@@ -608,15 +608,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-how-mbtiles-are-created" class="md-nav__link">
+  <a href="#4-how-mbtiles-are-created-hands-on-cli-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. How MBTiles Are Created
+        4. How MBTiles Are Created &amp; Hands-On CLI Commands
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="4. How MBTiles Are Created">
+    <nav class="md-nav" aria-label="4. How MBTiles Are Created &amp; Hands-On CLI Commands">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -631,10 +631,132 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#42-file-size-zoom-considerations" class="md-nav__link">
+  <a href="#42-commands-to-generate-vector-mbtiles-tippecanoe" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4.2 File Size &amp; Zoom Considerations
+        4.2 Commands to Generate Vector MBTiles (Tippecanoe)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.2 Commands to Generate Vector MBTiles (Tippecanoe)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Installation:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-basic-conversion-from-geojson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Basic Conversion from GeoJSON:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-production-multi-layer-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Production Multi-Layer Generation:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-tippecanoe-flags-explained" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Tippecanoe Flags Explained:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-commands-to-generate-raster-mbtiles-gdal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Commands to Generate Raster MBTiles (GDAL)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.3 Commands to Generate Raster MBTiles (GDAL)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-convert-natural-earth-geotiff-to-raster-mbtiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Convert Natural Earth GeoTIFF to Raster MBTiles:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-generate-pyramid-zoom-levels-overviews" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Generate Pyramid Zoom Levels (Overviews):
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-compressing-photographic-imagery-with-jpeg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Compressing Photographic Imagery with JPEG:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-inspecting-mbtiles-metadata-via-sqlite-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 Inspecting MBTiles Metadata via SQLite CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#45-file-size-zoom-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.5 File Size &amp; Zoom Considerations
       
     </span>
   </a>
@@ -714,15 +836,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#7-pmtiles-modern-tile-archives" class="md-nav__link">
+  <a href="#7-pmtiles-modern-tile-archives-cli-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        7. PMTiles – Modern Tile Archives
+        7. PMTiles – Modern Tile Archives &amp; CLI Commands
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="7. PMTiles – Modern Tile Archives">
+    <nav class="md-nav" aria-label="7. PMTiles – Modern Tile Archives &amp; CLI Commands">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -730,6 +852,89 @@
     <span class="md-ellipsis">
       
         7.1 What is PMTiles?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-commands-to-generate-pmtiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 Commands to Generate PMTiles
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7.2 Commands to Generate PMTiles">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installing-the-pmtiles-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installing the PMTiles CLI:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#method-a-convert-an-existing-mbtiles-file-to-pmtiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method A: Convert an Existing MBTiles File to PMTiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#method-b-generate-pmtiles-directly-from-geojson-with-tippecanoe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method B: Generate PMTiles Directly from GeoJSON with Tippecanoe
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-inspecting-verifying-pmtiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 Inspecting &amp; Verifying PMTiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74-serving-pmtiles-locally-for-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 Serving PMTiles Locally for Development
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#75-consuming-pmtiles-directly-in-openlayers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.5 Consuming PMTiles Directly in OpenLayers
       
     </span>
   </a>
@@ -1072,15 +1277,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-how-mbtiles-are-created" class="md-nav__link">
+  <a href="#4-how-mbtiles-are-created-hands-on-cli-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. How MBTiles Are Created
+        4. How MBTiles Are Created &amp; Hands-On CLI Commands
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="4. How MBTiles Are Created">
+    <nav class="md-nav" aria-label="4. How MBTiles Are Created &amp; Hands-On CLI Commands">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1095,10 +1300,132 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#42-file-size-zoom-considerations" class="md-nav__link">
+  <a href="#42-commands-to-generate-vector-mbtiles-tippecanoe" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4.2 File Size &amp; Zoom Considerations
+        4.2 Commands to Generate Vector MBTiles (Tippecanoe)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.2 Commands to Generate Vector MBTiles (Tippecanoe)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Installation:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-basic-conversion-from-geojson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Basic Conversion from GeoJSON:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-production-multi-layer-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Production Multi-Layer Generation:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-tippecanoe-flags-explained" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Tippecanoe Flags Explained:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-commands-to-generate-raster-mbtiles-gdal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Commands to Generate Raster MBTiles (GDAL)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.3 Commands to Generate Raster MBTiles (GDAL)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-convert-natural-earth-geotiff-to-raster-mbtiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Convert Natural Earth GeoTIFF to Raster MBTiles:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-generate-pyramid-zoom-levels-overviews" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Generate Pyramid Zoom Levels (Overviews):
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-compressing-photographic-imagery-with-jpeg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Compressing Photographic Imagery with JPEG:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-inspecting-mbtiles-metadata-via-sqlite-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 Inspecting MBTiles Metadata via SQLite CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#45-file-size-zoom-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.5 File Size &amp; Zoom Considerations
       
     </span>
   </a>
@@ -1178,15 +1505,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#7-pmtiles-modern-tile-archives" class="md-nav__link">
+  <a href="#7-pmtiles-modern-tile-archives-cli-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        7. PMTiles – Modern Tile Archives
+        7. PMTiles – Modern Tile Archives &amp; CLI Commands
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="7. PMTiles – Modern Tile Archives">
+    <nav class="md-nav" aria-label="7. PMTiles – Modern Tile Archives &amp; CLI Commands">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1194,6 +1521,89 @@
     <span class="md-ellipsis">
       
         7.1 What is PMTiles?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-commands-to-generate-pmtiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 Commands to Generate PMTiles
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7.2 Commands to Generate PMTiles">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installing-the-pmtiles-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installing the PMTiles CLI:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#method-a-convert-an-existing-mbtiles-file-to-pmtiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method A: Convert an Existing MBTiles File to PMTiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#method-b-generate-pmtiles-directly-from-geojson-with-tippecanoe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method B: Generate PMTiles Directly from GeoJSON with Tippecanoe
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-inspecting-verifying-pmtiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 Inspecting &amp; Verifying PMTiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74-serving-pmtiles-locally-for-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 Serving PMTiles Locally for Development
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#75-consuming-pmtiles-directly-in-openlayers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.5 Consuming PMTiles Directly in OpenLayers
       
     </span>
   </a>
@@ -1466,7 +1876,7 @@ Field Device (Tablet / Laptop)
 Vector MBTiles:  [ Raw Points, Lines, Polys ] ──▶ Styled Dynamically by OpenLayers in Browser
 </code></pre></div>
 <hr />
-<h2 id="4-how-mbtiles-are-created">4. How MBTiles Are Created</h2>
+<h2 id="4-how-mbtiles-are-created-hands-on-cli-commands">4. How MBTiles Are Created &amp; Hands-On CLI Commands</h2>
 <p>Creating MBTiles involves slicing GIS datasets into a multi-zoom tile pyramid and compressing them into an SQLite database:</p>
 <div class="highlight"><pre><span></span><code>Raw Spatial Data (PostGIS / Shapefile / GeoTIFF)
                        ↓
@@ -1478,12 +1888,79 @@ Vector MBTiles:  [ Raw Points, Lines, Polys ] ──▶ Styled Dynamically by Op
 </code></pre></div>
 <h3 id="41-common-tile-generation-tools">4.1 Common Tile Generation Tools</h3>
 <ul>
-<li><strong>Tippecanoe (Mapbox / Felt):</strong> The industry standard for creating vector MBTiles from GeoJSON. Automatically simplifies line vertices, drops minor features at low zoom levels, and balances tile density to prevent browser overdraw.</li>
+<li><strong>Tippecanoe (Mapbox / Felt):</strong> The industry standard CLI for creating vector MBTiles from GeoJSON. Automatically simplifies line vertices, drops minor features at low zoom levels, and balances tile density to prevent browser overdraw.</li>
 <li><strong>GDAL (<code>gdal_translate</code> &amp; <code>gdaladdo</code>):</strong> Powerful command-line utility for converting georeferenced raster imagery (GeoTIFFs, ECW) into raster MBTiles.</li>
 <li><strong>QGIS:</strong> Features a built-in processing tool: <strong>Generate XYZ tiles (MBTiles)</strong>. Exports any configured QGIS map canvas into an MBTiles file.</li>
 <li><strong>MapTiler Engine:</strong> Commercial desktop application offering a graphical workflow for generating high-performance raster and vector tile packages.</li>
 </ul>
-<h3 id="42-file-size-zoom-considerations">4.2 File Size &amp; Zoom Considerations</h3>
+<h3 id="42-commands-to-generate-vector-mbtiles-tippecanoe">4.2 Commands to Generate Vector MBTiles (Tippecanoe)</h3>
+<h4 id="1-installation">1. Installation:</h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># macOS (via Homebrew)</span>
+brew<span class="w"> </span>install<span class="w"> </span>tippecanoe
+
+<span class="c1"># Ubuntu / Debian</span>
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>tippecanoe
+</code></pre></div>
+<h4 id="2-basic-conversion-from-geojson">2. Basic Conversion from GeoJSON:</h4>
+<p>Convert a single Natural Earth GeoJSON file into vector MBTiles with zoom levels 0 through 14:
+<div class="highlight"><pre><span></span><code>tippecanoe<span class="w"> </span>-o<span class="w"> </span>roads.mbtiles<span class="w"> </span>-z<span class="w"> </span><span class="m">14</span><span class="w"> </span>-Z<span class="w"> </span><span class="m">0</span><span class="w"> </span>ne_10m_roads.geojson
+</code></pre></div></p>
+<h4 id="3-production-multi-layer-generation">3. Production Multi-Layer Generation:</h4>
+<p>Package multiple Natural Earth vector files (roads, populated places, and country boundaries) into a single <code>.mbtiles</code> archive with specific layer names and automated density optimization:
+<div class="highlight"><pre><span></span><code>tippecanoe<span class="w"> </span>-o<span class="w"> </span>natural_earth_basemap.mbtiles<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--maximum-zoom<span class="o">=</span><span class="m">14</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--minimum-zoom<span class="o">=</span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--layer<span class="o">=</span>roads:ne_10m_roads.geojson<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--layer<span class="o">=</span>places:ne_10m_populated_places.geojson<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--layer<span class="o">=</span>countries:ne_10m_admin_0_countries.geojson<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--drop-densest-as-needed<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--extend-zooms-if-still-dropping<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--force
+</code></pre></div></p>
+<h4 id="key-tippecanoe-flags-explained">Key Tippecanoe Flags Explained:</h4>
+<ul>
+<li><code>-o &lt;file.mbtiles&gt;</code>: The output MBTiles filename.</li>
+<li><code>-z &lt;max-zoom&gt;</code> / <code>--maximum-zoom</code>: Highest zoom level generated (e.g., <code>14</code>).</li>
+<li><code>-Z &lt;min-zoom&gt;</code> / <code>--minimum-zoom</code>: Lowest zoom level generated (e.g., <code>2</code>).</li>
+<li><code>-l &lt;name&gt;:&lt;file&gt;</code> / <code>--layer</code>: Assigns a named vector layer identifier within each vector tile (<code>.pbf</code>).</li>
+<li><code>--drop-densest-as-needed</code>: Dynamically simplifies and omits excess features at low zoom levels to guarantee tiles remain under the standard 500 KB browser limit.</li>
+<li><code>--force</code>: Overwrites the output file if it already exists.</li>
+</ul>
+<hr />
+<h3 id="43-commands-to-generate-raster-mbtiles-gdal">4.3 Commands to Generate Raster MBTiles (GDAL)</h3>
+<p>For Natural Earth shaded relief, orthophotos, or digital elevation models (DEMs) stored as GeoTIFF files, use GDAL:</p>
+<h4 id="1-convert-natural-earth-geotiff-to-raster-mbtiles">1. Convert Natural Earth GeoTIFF to Raster MBTiles:</h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># Convert Natural Earth Shaded Relief GeoTIFF to an MBTiles container</span>
+gdal_translate<span class="w"> </span>-of<span class="w"> </span>MBTILES<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-co<span class="w"> </span><span class="nv">TILE_FORMAT</span><span class="o">=</span>PNG<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-co<span class="w"> </span><span class="nv">ZOOM_LEVEL_STRATEGY</span><span class="o">=</span>UPPER<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>NE1_50M_SR_W.tif<span class="w"> </span>natural_earth_relief.mbtiles
+</code></pre></div>
+<h4 id="2-generate-pyramid-zoom-levels-overviews">2. Generate Pyramid Zoom Levels (Overviews):</h4>
+<p>A newly translated MBTiles file only contains the native resolution zoom level. Build lower zoom overviews using <code>gdaladdo</code>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Generate overview levels using bilinear interpolation</span>
+gdaladdo<span class="w"> </span>-r<span class="w"> </span>bilinear<span class="w"> </span>natural_earth_relief.mbtiles<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="m">64</span>
+</code></pre></div></p>
+<h4 id="3-compressing-photographic-imagery-with-jpeg">3. Compressing Photographic Imagery with JPEG:</h4>
+<p>When packaging large raster imagery where file size is critical, use JPEG compression:
+<div class="highlight"><pre><span></span><code>gdal_translate<span class="w"> </span>-of<span class="w"> </span>MBTILES<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-co<span class="w"> </span><span class="nv">TILE_FORMAT</span><span class="o">=</span>JPEG<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-co<span class="w"> </span><span class="nv">QUALITY</span><span class="o">=</span><span class="m">85</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>NE1_50M_SR_W.tif<span class="w"> </span>natural_earth_relief_jpeg.mbtiles
+
+gdaladdo<span class="w"> </span>-r<span class="w"> </span>average<span class="w"> </span>natural_earth_relief_jpeg.mbtiles<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="m">32</span>
+</code></pre></div></p>
+<hr />
+<h3 id="44-inspecting-mbtiles-metadata-via-sqlite-cli">4.4 Inspecting MBTiles Metadata via SQLite CLI</h3>
+<p>Because <code>.mbtiles</code> is a standard SQLite database, you can inspect it directly using <code>sqlite3</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. View metadata table (format, bounds, zoom levels, layers)</span>
+sqlite3<span class="w"> </span>city_basemap.mbtiles<span class="w"> </span><span class="s2">"SELECT * FROM metadata;"</span>
+
+<span class="c1"># 2. Count total tiles per zoom level</span>
+sqlite3<span class="w"> </span>city_basemap.mbtiles<span class="w"> </span><span class="s2">"SELECT zoom_level, count(*) AS tile_count FROM tiles GROUP BY zoom_level;"</span>
+</code></pre></div>
+<hr />
+<h3 id="45-file-size-zoom-considerations">4.5 File Size &amp; Zoom Considerations</h3>
 <p>Because every zoom level quadruples the number of tiles (<span class="arithmatex">\(4^z\)</span>), export bounds and zoom levels must be selected deliberately:</p>
 <div class="highlight"><pre><span></span><code>Zoom Level 0: 1 tile
 Zoom Level 5: 1,024 tiles
@@ -1534,7 +2011,7 @@ Zoom Level 15: 1,073,741,824 tiles (Over 1 billion tiles!)
 <li><strong>Local SQLite / Native Filesystem:</strong> Used in packaged desktop/mobile wrappers to store gigabytes of base maps and aerial imagery.</li>
 </ul>
 <hr />
-<h2 id="7-pmtiles-modern-tile-archives">7. PMTiles – Modern Tile Archives</h2>
+<h2 id="7-pmtiles-modern-tile-archives-cli-commands">7. PMTiles – Modern Tile Archives &amp; CLI Commands</h2>
 <p>While MBTiles is the traditional standard, <strong>PMTiles</strong> is the modern cloud-native and serverless standard for web map tile distribution.</p>
 <div class="highlight"><pre><span></span><code>Single PMTiles File (Hosted on S3 / CDN / Static Server)
                         ↓
@@ -1555,6 +2032,86 @@ Range: bytes=1048576-1081344
 <li>The storage server returns only the requested 32 KB tile.</li>
 <li><strong>Works in Browsers:</strong> Because browsers natively support HTTP Range Requests, OpenLayers can read directly from a remote PMTiles archive over the web without server-side rendering pipelines.</li>
 </ul>
+<hr />
+<h3 id="72-commands-to-generate-pmtiles">7.2 Commands to Generate PMTiles</h3>
+<h4 id="installing-the-pmtiles-cli">Installing the PMTiles CLI:</h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># macOS (Homebrew)</span>
+brew<span class="w"> </span>install<span class="w"> </span>pmtiles
+
+<span class="c1"># Or via npm globally</span>
+npm<span class="w"> </span>install<span class="w"> </span>-g<span class="w"> </span>pmtiles
+</code></pre></div>
+<h4 id="method-a-convert-an-existing-mbtiles-file-to-pmtiles">Method A: Convert an Existing MBTiles File to PMTiles</h4>
+<p>If you already have an MBTiles SQLite file (vector or raster), convert it in seconds:
+<div class="highlight"><pre><span></span><code>pmtiles<span class="w"> </span>convert<span class="w"> </span>natural_earth_basemap.mbtiles<span class="w"> </span>natural_earth_basemap.pmtiles
+</code></pre></div></p>
+<h4 id="method-b-generate-pmtiles-directly-from-geojson-with-tippecanoe">Method B: Generate PMTiles Directly from GeoJSON with Tippecanoe</h4>
+<p>Modern releases of Tippecanoe can write directly to <code>.pmtiles</code> without an intermediate MBTiles file:
+<div class="highlight"><pre><span></span><code>tippecanoe<span class="w"> </span>-o<span class="w"> </span>natural_earth.pmtiles<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--maximum-zoom<span class="o">=</span><span class="m">14</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--minimum-zoom<span class="o">=</span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--layer<span class="o">=</span>roads:ne_10m_roads.geojson<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--layer<span class="o">=</span>places:ne_10m_populated_places.geojson<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--layer<span class="o">=</span>countries:ne_10m_admin_0_countries.geojson<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--drop-densest-as-needed<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--extend-zooms-if-still-dropping<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--force
+</code></pre></div></p>
+<hr />
+<h3 id="73-inspecting-verifying-pmtiles">7.3 Inspecting &amp; Verifying PMTiles</h3>
+<p>Use the <code>pmtiles</code> CLI to inspect archive headers and verify data integrity:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. View metadata header, bounds, zoom levels, and format</span>
+pmtiles<span class="w"> </span>show<span class="w"> </span>city_map.pmtiles
+
+<span class="c1"># 2. Cryptographically verify the integrity of all internal tile offsets</span>
+pmtiles<span class="w"> </span>verify<span class="w"> </span>city_map.pmtiles
+</code></pre></div>
+<hr />
+<h3 id="74-serving-pmtiles-locally-for-development">7.4 Serving PMTiles Locally for Development</h3>
+<p>The <code>pmtiles</code> CLI includes a zero-configuration local HTTP tile server with built-in CORS support:</p>
+<p><div class="highlight"><pre><span></span><code><span class="c1"># Serve the PMTiles archive locally on port 8080</span>
+pmtiles<span class="w"> </span>serve<span class="w"> </span>city_map.pmtiles<span class="w"> </span>--cors<span class="o">=</span>*<span class="w"> </span>--port<span class="o">=</span><span class="m">8080</span>
+</code></pre></div>
+Tiles are immediately available at standard XYZ endpoints:
+<div class="highlight"><pre><span></span><code>http://localhost:8080/city_map/{z}/{x}/{y}.pbf
+</code></pre></div></p>
+<hr />
+<h3 id="75-consuming-pmtiles-directly-in-openlayers">7.5 Consuming PMTiles Directly in OpenLayers</h3>
+<p>OpenLayers can consume PMTiles directly using the official <code>pmtiles</code> npm package (<code>npm install pmtiles</code>) via custom tile loading functions:</p>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">VectorTileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/VectorTile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">VectorTileSource</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/VectorTile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">MVT</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/format/MVT.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">pmtiles</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'pmtiles'</span><span class="p">;</span>
+
+<span class="c1">// 1. Initialize PMTiles instance pointing to remote S3 or local URL</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">pmtiles</span><span class="p">.</span><span class="nx">PMTiles</span><span class="p">(</span><span class="s1">'https://r2.example.com/maps/city_map.pmtiles'</span><span class="p">);</span>
+
+<span class="c1">// 2. Wrap PMTiles byte fetching inside an OpenLayers VectorTile source</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">pmtilesSource</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorTileSource</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">format</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">MVT</span><span class="p">(),</span>
+<span class="w">  </span><span class="nx">tileLoadFunction</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">tile</span><span class="p">,</span><span class="w"> </span><span class="nx">url</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">tile</span><span class="p">.</span><span class="nx">setLoader</span><span class="p">((</span><span class="nx">extent</span><span class="p">,</span><span class="w"> </span><span class="nx">resolution</span><span class="p">,</span><span class="w"> </span><span class="nx">projection</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">z</span><span class="p">,</span><span class="w"> </span><span class="nx">x</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">tile</span><span class="p">.</span><span class="nx">getTileCoord</span><span class="p">();</span>
+<span class="w">      </span><span class="nx">p</span><span class="p">.</span><span class="nx">getZxy</span><span class="p">(</span><span class="nx">z</span><span class="p">,</span><span class="w"> </span><span class="nx">x</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="p">).</span><span class="nx">then</span><span class="p">((</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">res</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="kd">const</span><span class="w"> </span><span class="nx">format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">tile</span><span class="p">.</span><span class="nx">getFormat</span><span class="p">();</span>
+<span class="w">          </span><span class="kd">const</span><span class="w"> </span><span class="nx">features</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">format</span><span class="p">.</span><span class="nx">readFeatures</span><span class="p">(</span><span class="nx">res</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">extent</span><span class="o">:</span><span class="w"> </span><span class="nx">extent</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">featureProjection</span><span class="o">:</span><span class="w"> </span><span class="nx">projection</span>
+<span class="w">          </span><span class="p">});</span>
+<span class="w">          </span><span class="nx">tile</span><span class="p">.</span><span class="nx">setFeatures</span><span class="p">(</span><span class="nx">features</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">});</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">pmtilesLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorTileLayer</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="nx">pmtilesSource</span>
+<span class="p">});</span>
+
+<span class="nx">map</span><span class="p">.</span><span class="nx">addLayer</span><span class="p">(</span><span class="nx">pmtilesLayer</span><span class="p">);</span>
+</code></pre></div>
 <hr />
 <h2 id="8-mbtiles-vs-pmtiles-vs-xyz">8. MBTiles vs. PMTiles vs. XYZ</h2>
 <table>
@@ -1758,16 +2315,16 @@ PostGIS / Files ──▶ Tile Generator ──▶ MBTiles / PMTiles ──▶ L
 <hr />
 <h4 id="example-implementation-mainjs">Example Implementation (<code>main.js</code>):</h4>
 <p>The following production snippet demonstrates how OpenLayers integrates with local tile sources or cloud-native PMTiles using standard XYZ / VectorTile protocols:</p>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/Map.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/View.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Tile.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">VectorTileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/VectorTile.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/OSM.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">XYZ</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/XYZ.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">VectorTileSource</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/VectorTile.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">MVT</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/format/MVT.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/proj.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="s1">&#39;ol/ol.css&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/Map.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/View.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Tile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">VectorTileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/VectorTile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/OSM.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">XYZ</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/XYZ.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">VectorTileSource</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/VectorTile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">MVT</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/format/MVT.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/proj.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">'ol/ol.css'</span><span class="p">;</span>
 
 <span class="c1">// 1. Online Base Layer: OpenStreetMap</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">onlineBaseLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">TileLayer</span><span class="p">({</span>
@@ -1779,7 +2336,7 @@ PostGIS / Files ──▶ Tile Generator ──▶ MBTiles / PMTiles ──▶ L
 <span class="c1">// Example endpoint exposed by a local mbtiles server:</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">localOfflineRasterLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">TileLayer</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">XYZ</span><span class="p">({</span>
-<span class="w">    </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;http://localhost:8080/services/offline_basemap/tiles/{z}/{x}/{y}.png&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">'http://localhost:8080/services/offline_basemap/tiles/{z}/{x}/{y}.png'</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">maxZoom</span><span class="o">:</span><span class="w"> </span><span class="mf">16</span>
 <span class="w">  </span><span class="p">}),</span>
 <span class="w">  </span><span class="nx">visible</span><span class="o">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="c1">// Toggled when offline</span>
@@ -1789,7 +2346,7 @@ PostGIS / Files ──▶ Tile Generator ──▶ MBTiles / PMTiles ──▶ L
 <span class="kd">const</span><span class="w"> </span><span class="nx">offlineVectorTileLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorTileLayer</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorTileSource</span><span class="p">({</span>
 <span class="w">    </span><span class="nx">format</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">MVT</span><span class="p">(),</span>
-<span class="w">    </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;http://localhost:8080/services/city_vectors/tiles/{z}/{x}/{y}.pbf&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">'http://localhost:8080/services/city_vectors/tiles/{z}/{x}/{y}.pbf'</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">maxZoom</span><span class="o">:</span><span class="w"> </span><span class="mf">14</span>
 <span class="w">  </span><span class="p">}),</span>
 <span class="w">  </span><span class="nx">visible</span><span class="o">:</span><span class="w"> </span><span class="kc">false</span>
@@ -1797,7 +2354,7 @@ PostGIS / Files ──▶ Tile Generator ──▶ MBTiles / PMTiles ──▶ L
 
 <span class="c1">// 4. Initialize Map</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">'map'</span><span class="p">,</span>
 <span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="nx">onlineBaseLayer</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">localOfflineRasterLayer</span><span class="p">,</span>
@@ -1810,15 +2367,15 @@ PostGIS / Files ──▶ Tile Generator ──▶ MBTiles / PMTiles ──▶ L
 <span class="p">});</span>
 
 <span class="c1">// 5. Connectivity Detection &amp; Layer Switcher</span>
-<span class="nb">window</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">&#39;offline&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;Network connection lost! Switching to offline tile source.&#39;</span><span class="p">);</span>
+<span class="nb">window</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">'offline'</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">'Network connection lost! Switching to offline tile source.'</span><span class="p">);</span>
 <span class="w">  </span><span class="nx">onlineBaseLayer</span><span class="p">.</span><span class="nx">setVisible</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
 <span class="w">  </span><span class="nx">localOfflineRasterLayer</span><span class="p">.</span><span class="nx">setVisible</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
 <span class="w">  </span><span class="nx">offlineVectorTileLayer</span><span class="p">.</span><span class="nx">setVisible</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
 <span class="p">});</span>
 
-<span class="nb">window</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">&#39;online&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Network restored. Reverting to online services.&#39;</span><span class="p">);</span>
+<span class="nb">window</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">'online'</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'Network restored. Reverting to online services.'</span><span class="p">);</span>
 <span class="w">  </span><span class="nx">onlineBaseLayer</span><span class="p">.</span><span class="nx">setVisible</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
 <span class="w">  </span><span class="nx">localOfflineRasterLayer</span><span class="p">.</span><span class="nx">setVisible</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
 <span class="w">  </span><span class="nx">offlineVectorTileLayer</span><span class="p">.</span><span class="nx">setVisible</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
