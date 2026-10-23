@@ -343,7 +343,7 @@
   <span class="md-ellipsis">
     
   
-    Module 3 - GeoServer & OpenLayers
+    Module 3 - GeoServer & PostGIS
   
 
     
@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    Module 4 - PostGIS & OpenLayers
+    Module 4 - Vector Styling & Interaction
   
 
     
@@ -399,7 +399,7 @@
   <span class="md-ellipsis">
     
   
-    Module 5 - Vector Styling & Interaction
+    Module 5 - Map Interactions & Controls
   
 
     
@@ -715,15 +715,15 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#example-implementation-mainjs-and-indexhtml" class="md-nav__link">
+  <a href="#complete-implementation-mainjs-and-indexhtml" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Example Implementation (main.js and index.html):
+        Complete Implementation (main.js and index.html):
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Example Implementation (main.js and index.html):">
+    <nav class="md-nav" aria-label="Complete Implementation (main.js and index.html):">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1012,15 +1012,15 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#example-implementation-mainjs-and-indexhtml" class="md-nav__link">
+  <a href="#complete-implementation-mainjs-and-indexhtml" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Example Implementation (main.js and index.html):
+        Complete Implementation (main.js and index.html):
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Example Implementation (main.js and index.html):">
+    <nav class="md-nav" aria-label="Complete Implementation (main.js and index.html):">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1078,23 +1078,24 @@
 
 
 <h1 id="module-8-integrated-web-gis-application-final-challenge">Module 8 - Integrated Web GIS Application &amp; Final Challenge</h1>
-<p>Welcome to the capstone module! In this session, you will integrate the concepts mastered across the entire course—OpenLayers architecture, data sources, GeoServer services, PostGIS, vector styling, and feature interactions—to build a complete, production-grade Web GIS application independently.</p>
-<div class="highlight"><pre><span></span><code>               ENTERPRISE DATA SOURCES
-         ┌──────────────────┴──────────────────┐
-         ↓                                     ↓
-GeoServer WMS (Districts)             GeoServer WFS (Hospitals)
-         │                                     │
-         └──────────────────┬──────────────────┘
-                            ↓
-               OPENLAYERS CLIENT APPLICATION
-    ┌───────────────────────┼───────────────────────┐
-    ↓                       ↓                       ↓
-Base Map (OSM)       Dynamic Styling        Select &amp; Hover
-(minZoom constraint) (Capacity &gt; 100)     (Popup &amp; Info Panel)
-    │                       │                       │
-    └───────────────────────┼───────────────────────┘
-                            ↓
-                 INTEGRATED WEB GIS UI
+<p>Welcome to the capstone module! In this session, you will integrate the concepts mastered across the entire course—OpenLayers architecture, data sources, GeoServer services, PostGIS, vector styling, map controls, and feature interactions—to build a complete, production-grade Web GIS Geoportal using the standard <strong>Natural Earth</strong> vector datasets.</p>
+<div class="highlight"><pre><span></span><code>               ENTERPRISE DATA SOURCES (Natural Earth)
+          ┌──────────────────┴──────────────────┐
+          ↓                                     ↓
+GeoServer WMS (Countries / Boundaries) GeoServer WFS (Populated Places)
+(ne_10m_admin_0_countries)            (ne_10m_populated_places)
+          │                                     │
+          └──────────────────┬──────────────────┘
+                             ↓
+                OPENLAYERS CLIENT APPLICATION
+     ┌───────────────────────┼───────────────────────┐
+     ↓                       ↓                       ↓
+Base Map (OSM)        Dynamic Styling         Select &amp; Hover
+(minZoom constraint) (Capitals / Megacities) (Info Panel &amp; Counts)
+     │                       │                       │
+     └───────────────────────┼───────────────────────┘
+                             ↓
+                  INTEGRATED WEB GIS UI
 </code></pre></div>
 <hr />
 <h2 id="1-project-setup-architecture">1. Project Setup &amp; Architecture</h2>
@@ -1110,24 +1111,24 @@ OpenLayers Map Instance
  ├── Interactions (Select on click, Hover pointermove)
  └── Layers (Ordered by zIndex)
       ├── Base Layer: OpenStreetMap (TileLayer + OSM, zIndex: 0)
-      ├── Operational Layer: Municipal Districts (ImageLayer + ImageWMS, zIndex: 1)
-      └── Vector Layer: Healthcare Facilities (VectorLayer + VectorSource, zIndex: 2)
+      ├── Operational Layer: Countries (ImageLayer + ImageWMS: ne_10m_admin_0_countries, zIndex: 1)
+      └── Vector Layer: Populated Places (VectorLayer + VectorSource: ne_10m_populated_places, zIndex: 2)
 </code></pre></div>
 <h3 id="12-managing-layer-stacking-zindex">1.2 Managing Layer Stacking (<code>zIndex</code>)</h3>
 <p>In multi-layer applications, layer visibility conflicts occur when rasters hide vector points. Explicitly setting <code>zIndex</code> ensures deterministic rendering:</p>
 <ul>
 <li><code>zIndex: 0</code> <span class="arithmatex">\(\rightarrow\)</span> Base map (OSM / Satellite).</li>
-<li><code>zIndex: 1</code> <span class="arithmatex">\(\rightarrow\)</span> Polygon boundary overlays (WMS / Districts).</li>
-<li><code>zIndex: 2</code> <span class="arithmatex">\(\rightarrow\)</span> Interactive vector points &amp; lines (WFS / Hospitals).</li>
+<li><code>zIndex: 1</code> <span class="arithmatex">\(\rightarrow\)</span> Polygon boundary overlays (WMS / Natural Earth Countries).</li>
+<li><code>zIndex: 2</code> <span class="arithmatex">\(\rightarrow\)</span> Interactive vector points &amp; cities (WFS / Natural Earth Populated Places).</li>
 </ul>
 <hr />
 <h2 id="2-base-map-view-setup">2. Base Map &amp; View Setup</h2>
 <p>The map view governs geographic perspective, initial bounds, and navigation constraints.</p>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/Map.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/View.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Tile.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/OSM.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/proj.js&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/Map.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/View.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Tile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/OSM.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/proj.js'</span><span class="p">;</span>
 
 <span class="c1">// 1. Base Layer</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">baseLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">TileLayer</span><span class="p">({</span>
@@ -1137,86 +1138,88 @@ OpenLayers Map Instance
 
 <span class="c1">// 2. View Configuration with Navigation Constraints</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">view</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">View</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">center</span><span class="o">:</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">([</span><span class="mf">73.8567</span><span class="p">,</span><span class="w"> </span><span class="mf">18.5204</span><span class="p">]),</span><span class="w"> </span><span class="c1">// Pune, India target coordinates</span>
-<span class="w">  </span><span class="nx">zoom</span><span class="o">:</span><span class="w"> </span><span class="mf">12</span><span class="p">,</span>
-<span class="w">  </span><span class="nx">minZoom</span><span class="o">:</span><span class="w"> </span><span class="mf">6</span><span class="p">,</span><span class="w">  </span><span class="c1">// Prevents user from zooming out into global space</span>
+<span class="w">  </span><span class="nx">center</span><span class="o">:</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">([</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="mf">20</span><span class="p">]),</span><span class="w"> </span><span class="c1">// Centered over global view</span>
+<span class="w">  </span><span class="nx">zoom</span><span class="o">:</span><span class="w"> </span><span class="mf">3</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">minZoom</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="p">,</span><span class="w">  </span><span class="c1">// Prevents over-zooming out into void</span>
 <span class="w">  </span><span class="nx">maxZoom</span><span class="o">:</span><span class="w"> </span><span class="mf">18</span><span class="w">  </span><span class="c1">// Prevents over-zooming beyond tile availability</span>
 <span class="p">});</span>
 
 <span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">'map'</span><span class="p">,</span>
 <span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">baseLayer</span><span class="p">],</span>
 <span class="w">  </span><span class="nx">view</span><span class="o">:</span><span class="w"> </span><span class="nx">view</span>
 <span class="p">});</span>
 </code></pre></div>
 <hr />
 <h2 id="3-geoserver-wms-layer-integration">3. GeoServer WMS Layer Integration</h2>
-<p>The boundary layer represents territorial districts rendered as a server-side WMS map image.</p>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">ImageLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Image.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">ImageWMS</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/ImageWMS.js&#39;</span><span class="p">;</span>
+<p>The boundary layer represents country borders rendered as a server-side WMS map image from Natural Earth (<code>ne_10m_admin_0_countries</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">ImageLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Image.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ImageWMS</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/ImageWMS.js'</span><span class="p">;</span>
 
-<span class="kd">const</span><span class="w"> </span><span class="nx">districtsSource</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ImageWMS</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;http://localhost:8080/geoserver/wms&#39;</span><span class="p">,</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">countriesSource</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ImageWMS</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">'http://localhost:8080/geoserver/wms'</span><span class="p">,</span><span class="w"> </span><span class="c1">// Fallback: 'https://demo.geoserver.org/geoserver/wms'</span>
 <span class="w">  </span><span class="nx">params</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s1">&#39;LAYERS&#39;</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;training:districts&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="s1">&#39;TRANSPARENT&#39;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<span class="w">    </span><span class="s1">&#39;FORMAT&#39;</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;image/png&#39;</span>
+<span class="w">    </span><span class="s1">'LAYERS'</span><span class="o">:</span><span class="w"> </span><span class="s1">'training:ne_10m_admin_0_countries'</span><span class="p">,</span>
+<span class="w">    </span><span class="s1">'TRANSPARENT'</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="s1">'FORMAT'</span><span class="o">:</span><span class="w"> </span><span class="s1">'image/png'</span>
 <span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nx">serverType</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;geoserver&#39;</span>
+<span class="w">  </span><span class="nx">serverType</span><span class="o">:</span><span class="w"> </span><span class="s1">'geoserver'</span>
 <span class="p">});</span>
 
-<span class="kd">const</span><span class="w"> </span><span class="nx">districtsLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ImageLayer</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="nx">districtsSource</span><span class="p">,</span>
-<span class="w">  </span><span class="nx">opacity</span><span class="o">:</span><span class="w"> </span><span class="mf">0.75</span><span class="p">,</span>
-<span class="w">  </span><span class="nx">zIndex</span><span class="o">:</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="c1">// Sits above OSM base map, below hospital vectors</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">countriesLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ImageLayer</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="nx">countriesSource</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">opacity</span><span class="o">:</span><span class="w"> </span><span class="mf">0.65</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">zIndex</span><span class="o">:</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="c1">// Sits above OSM base map, below city markers</span>
 <span class="p">});</span>
 
-<span class="nx">map</span><span class="p">.</span><span class="nx">addLayer</span><span class="p">(</span><span class="nx">districtsLayer</span><span class="p">);</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">addLayer</span><span class="p">(</span><span class="nx">countriesLayer</span><span class="p">);</span>
 </code></pre></div>
 <h3 id="key-considerations">Key Considerations:</h3>
 <ul>
-<li><strong><code>TRANSPARENT: true</code>:</strong> Mandatory so lower base map roads and labels show through district boundaries.</li>
+<li><strong><code>TRANSPARENT: true</code>:</strong> Mandatory so lower base map street labels show through country boundaries.</li>
 <li><strong>Inspect Network Traffic:</strong> Open browser Developer Tools (<code>F12</code> <span class="arithmatex">\(\rightarrow\)</span> <strong>Network</strong>). Pan the map to verify outgoing <code>GetMap</code> requests with updated <code>BBOX</code> coordinates.</li>
 </ul>
 <hr />
 <h2 id="4-geoserver-wfs-data-driven-styling">4. GeoServer WFS &amp; Data-Driven Styling</h2>
-<p>The healthcare facilities layer is loaded as client-side vector geometries via WFS, enabling dynamic styling based on bed capacity.</p>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Vector.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">VectorSource</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/Vector.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">GeoJSON</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/format/GeoJSON.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Style</span><span class="p">,</span><span class="w"> </span><span class="nx">Circle</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">,</span><span class="w"> </span><span class="nx">Fill</span><span class="p">,</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">,</span><span class="w"> </span><span class="nx">Text</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/style.js&#39;</span><span class="p">;</span>
+<p>The cities layer is streamed as client-side vector geometries via WFS (or local GeoJSON), enabling dynamic styling based on Natural Earth attributes (<code>FEATURECLA</code> and <code>POP_MAX</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Vector.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">VectorSource</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/Vector.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">GeoJSON</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/format/GeoJSON.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Style</span><span class="p">,</span><span class="w"> </span><span class="nx">Circle</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">,</span><span class="w"> </span><span class="nx">Fill</span><span class="p">,</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">,</span><span class="w"> </span><span class="nx">Text</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/style.js'</span><span class="p">;</span>
 
 <span class="c1">// 1. Pre-cached Styles for High Performance</span>
-<span class="kd">const</span><span class="w"> </span><span class="nx">highCapacityStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">capitalStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">image</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">({</span>
-<span class="w">    </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">9</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#D32F2F&#39;</span><span class="w"> </span><span class="p">}),</span><span class="w"> </span><span class="c1">// Red for major facilities (&gt; 100 beds)</span>
-<span class="w">    </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#FFFFFF&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="p">})</span>
+<span class="w">    </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">8</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#D97706'</span><span class="w"> </span><span class="p">}),</span><span class="w"> </span><span class="c1">// Amber/Gold for National Capitals</span>
+<span class="w">    </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#FFFFFF'</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="p">})</span>
 <span class="w">  </span><span class="p">})</span>
 <span class="p">});</span>
 
-<span class="kd">const</span><span class="w"> </span><span class="nx">normalCapacityStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">standardCityStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">image</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">({</span>
-<span class="w">    </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">6</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#1976D2&#39;</span><span class="w"> </span><span class="p">}),</span><span class="w"> </span><span class="c1">// Blue for standard clinics (&lt;= 100 beds)</span>
-<span class="w">    </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#FFFFFF&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">1.5</span><span class="w"> </span><span class="p">})</span>
+<span class="w">    </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">5</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#2563EB'</span><span class="w"> </span><span class="p">}),</span><span class="w"> </span><span class="c1">// Blue for other cities</span>
+<span class="w">    </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#FFFFFF'</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">1.5</span><span class="w"> </span><span class="p">})</span>
 <span class="w">  </span><span class="p">})</span>
 <span class="p">});</span>
 
 <span class="c1">// 2. Attribute-Based Style Function</span>
-<span class="kd">function</span><span class="w"> </span><span class="nx">hospitalStyleFunction</span><span class="p">(</span><span class="nx">feature</span><span class="p">,</span><span class="w"> </span><span class="nx">resolution</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">capacity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">feature</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;capacity&#39;</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span>
-<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">baseStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">capacity</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">100</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">highCapacityStyle</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="nx">normalCapacityStyle</span><span class="p">;</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">cityStyleFunction</span><span class="p">(</span><span class="nx">feature</span><span class="p">,</span><span class="w"> </span><span class="nx">resolution</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">featureClass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">feature</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">'FEATURECLA'</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">feature</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">'featurecla'</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">isCapital</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">featureClass</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">'Admin-0 capital'</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">baseStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">isCapital</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">capitalStyle</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="nx">standardCityStyle</span><span class="p">;</span>
 
-<span class="w">  </span><span class="c1">// Add text label when zoomed in close (resolution &lt; 25 meters/pixel)</span>
-<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">resolution</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">25</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Add text label when zoomed in close (resolution &lt; 5000 meters/pixel)</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">resolution</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">5000</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">cityName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">feature</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">'NAME'</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">feature</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">'name'</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">''</span><span class="p">;</span>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
 <span class="w">      </span><span class="nx">image</span><span class="o">:</span><span class="w"> </span><span class="nx">baseStyle</span><span class="p">.</span><span class="nx">getImage</span><span class="p">(),</span>
 <span class="w">      </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Text</span><span class="p">({</span>
-<span class="w">        </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="nx">feature</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
-<span class="w">        </span><span class="nx">font</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;bold 12px Inter, sans-serif&#39;</span><span class="p">,</span>
-<span class="w">        </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#212121&#39;</span><span class="w"> </span><span class="p">}),</span>
-<span class="w">        </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#FFFFFF&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">3</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="nx">cityName</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">font</span><span class="o">:</span><span class="w"> </span><span class="s1">'bold 12px Inter, sans-serif'</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#0F172A'</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#FFFFFF'</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">3</span><span class="w"> </span><span class="p">}),</span>
 <span class="w">        </span><span class="nx">offsetY</span><span class="o">:</span><span class="w"> </span><span class="o">-</span><span class="mf">14</span>
 <span class="w">      </span><span class="p">})</span>
 <span class="w">    </span><span class="p">});</span>
@@ -1225,70 +1228,79 @@ OpenLayers Map Instance
 <span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">baseStyle</span><span class="p">;</span>
 <span class="p">}</span>
 
-<span class="c1">// 3. WFS Vector Layer</span>
-<span class="kd">const</span><span class="w"> </span><span class="nx">hospitalSource</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorSource</span><span class="p">({</span>
+<span class="c1">// 3. WFS Vector Layer (or local ne_10m_populated_places.geojson)</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">citySource</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorSource</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">format</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">GeoJSON</span><span class="p">(),</span>
-<span class="w">  </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;http://localhost:8080/geoserver/wfs?service=WFS&amp;version=2.0.0&amp;request=GetFeature&amp;typeNames=training:hospitals&amp;outputFormat=application/json&#39;</span>
+<span class="w">  </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">'http://localhost:8080/geoserver/wfs?service=WFS&amp;version=2.0.0&amp;request=GetFeature&amp;typeNames=training:ne_10m_populated_places&amp;outputFormat=application/json'</span>
 <span class="p">});</span>
 
-<span class="kd">const</span><span class="w"> </span><span class="nx">hospitalLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="nx">hospitalSource</span><span class="p">,</span>
-<span class="w">  </span><span class="nx">style</span><span class="o">:</span><span class="w"> </span><span class="nx">hospitalStyleFunction</span><span class="p">,</span>
-<span class="w">  </span><span class="nx">zIndex</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="c1">// Rendered on top of district polygons</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">cityLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="nx">citySource</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">style</span><span class="o">:</span><span class="w"> </span><span class="nx">cityStyleFunction</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">zIndex</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="c1">// Rendered on top of country boundaries</span>
 <span class="p">});</span>
 
-<span class="nx">map</span><span class="p">.</span><span class="nx">addLayer</span><span class="p">(</span><span class="nx">hospitalLayer</span><span class="p">);</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">addLayer</span><span class="p">(</span><span class="nx">cityLayer</span><span class="p">);</span>
 </code></pre></div>
 <hr />
 <h2 id="5-feature-interaction-attribute-display">5. Feature Interaction &amp; Attribute Display</h2>
 <p>Users expect instant feedback when clicking features. You can present attributes through an <strong>external info panel</strong> or a coordinate-anchored <strong><code>ol/Overlay</code> popup</strong>.</p>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">Select</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/interaction/Select.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">click</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/events/condition.js&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">Select</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/interaction/Select.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">click</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/events/condition.js'</span><span class="p">;</span>
 
 <span class="c1">// 1. Configure Selection Interaction with Hit Tolerance</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">selectInteraction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Select</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">condition</span><span class="o">:</span><span class="w"> </span><span class="nx">click</span><span class="p">,</span>
-<span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">hospitalLayer</span><span class="p">],</span>
+<span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">cityLayer</span><span class="p">],</span>
 <span class="w">  </span><span class="nx">hitTolerance</span><span class="o">:</span><span class="w"> </span><span class="mf">5</span><span class="p">,</span><span class="w"> </span><span class="c1">// Pixel buffer around touch/click for mobile friendliness</span>
 <span class="w">  </span><span class="nx">style</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
 <span class="w">    </span><span class="nx">image</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">({</span>
-<span class="w">      </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">12</span><span class="p">,</span>
-<span class="w">      </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#FFD600&#39;</span><span class="w"> </span><span class="p">}),</span><span class="w"> </span><span class="c1">// Highlight gold</span>
-<span class="w">      </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#000000&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">2.5</span><span class="w"> </span><span class="p">})</span>
+<span class="w">      </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">11</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#E11D48'</span><span class="w"> </span><span class="p">}),</span><span class="w"> </span><span class="c1">// Highlight Crimson</span>
+<span class="w">      </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#FFFFFF'</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">2.5</span><span class="w"> </span><span class="p">})</span>
 <span class="w">    </span><span class="p">})</span>
 <span class="w">  </span><span class="p">})</span>
 <span class="p">});</span>
 <span class="nx">map</span><span class="p">.</span><span class="nx">addInteraction</span><span class="p">(</span><span class="nx">selectInteraction</span><span class="p">);</span>
 
 <span class="c1">// 2. Output Properties to External HTML Info Panel</span>
-<span class="kd">const</span><span class="w"> </span><span class="nx">infoPanel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;feature-details&#39;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">infoPanel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">'feature-details'</span><span class="p">);</span>
 
-<span class="nx">selectInteraction</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;select&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="nx">selectInteraction</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">'select'</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">selected</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">selected</span><span class="p">;</span>
 
 <span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">selected</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">props</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">selected</span><span class="p">[</span><span class="mf">0</span><span class="p">].</span><span class="nx">getProperties</span><span class="p">();</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">pop</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">props</span><span class="p">.</span><span class="nx">POP_MAX</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nb">Number</span><span class="p">(</span><span class="nx">props</span><span class="p">.</span><span class="nx">POP_MAX</span><span class="p">).</span><span class="nx">toLocaleString</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">'N/A'</span><span class="p">;</span>
 <span class="w">    </span><span class="nx">infoPanel</span><span class="p">.</span><span class="nx">innerHTML</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`</span>
-<span class="sb">      &lt;h3&gt;</span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">name</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">&#39;Unnamed Facility&#39;</span><span class="si">}</span><span class="sb">&lt;/h3&gt;</span>
-<span class="sb">      &lt;p&gt;&lt;strong&gt;Capacity:&lt;/strong&gt; </span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">capacity</span><span class="si">}</span><span class="sb"> beds&lt;/p&gt;</span>
-<span class="sb">      &lt;p&gt;&lt;strong&gt;District:&lt;/strong&gt; </span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">district</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">&#39;N/A&#39;</span><span class="si">}</span><span class="sb">&lt;/p&gt;</span>
-<span class="sb">      &lt;p&gt;&lt;strong&gt;Emergency:&lt;/strong&gt; </span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">emergency</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;Available&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;No&#39;</span><span class="si">}</span><span class="sb">&lt;/p&gt;</span>
+<span class="sb">      &lt;h3&gt;</span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">NAME</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'City'</span><span class="si">}</span><span class="sb">&lt;/h3&gt;</span>
+<span class="sb">      &lt;p&gt;&lt;strong&gt;Country:&lt;/strong&gt; </span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">ADM0NAME</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'N/A'</span><span class="si">}</span><span class="sb">&lt;/p&gt;</span>
+<span class="sb">      &lt;p&gt;&lt;strong&gt;Classification:&lt;/strong&gt; </span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">FEATURECLA</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'N/A'</span><span class="si">}</span><span class="sb">&lt;/p&gt;</span>
+<span class="sb">      &lt;p&gt;&lt;strong&gt;Population:&lt;/strong&gt; </span><span class="si">${</span><span class="nx">pop</span><span class="si">}</span><span class="sb">&lt;/p&gt;</span>
 <span class="sb">    `</span><span class="p">;</span>
 <span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nx">infoPanel</span><span class="p">.</span><span class="nx">innerHTML</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&lt;p class=&quot;placeholder&quot;&gt;Click a hospital to inspect details.&lt;/p&gt;&#39;</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">infoPanel</span><span class="p">.</span><span class="nx">innerHTML</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'&lt;p class="placeholder"&gt;Click any city on the map to inspect details.&lt;/p&gt;'</span><span class="p">;</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">});</span>
 </code></pre></div>
 <hr />
 <h2 id="6-controls-map-ui-polishing">6. Controls &amp; Map UI Polishing</h2>
 <p>OpenLayers ships with essential map controls that improve user orientation and usability.</p>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/control/ScaleLine.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">FullScreen</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/control/FullScreen.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">defaults</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">defaultControls</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/control/defaults.js&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/control/ScaleLine.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">FullScreen</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/control/FullScreen.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ZoomSlider</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/control/ZoomSlider.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">MousePosition</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/control/MousePosition.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createStringXY</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/coordinate.js'</span><span class="p">;</span>
 
-<span class="c1">// Add ScaleLine and FullScreen to map controls</span>
-<span class="nx">map</span><span class="p">.</span><span class="nx">addControl</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="p">({</span><span class="w"> </span><span class="nx">units</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;metric&#39;</span><span class="w"> </span><span class="p">}));</span>
+<span class="c1">// Add ScaleLine, FullScreen, ZoomSlider, and MousePosition</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">addControl</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="p">({</span><span class="w"> </span><span class="nx">units</span><span class="o">:</span><span class="w"> </span><span class="s1">'metric'</span><span class="p">,</span><span class="w"> </span><span class="nx">bar</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nx">steps</span><span class="o">:</span><span class="w"> </span><span class="mf">4</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}));</span>
 <span class="nx">map</span><span class="p">.</span><span class="nx">addControl</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">FullScreen</span><span class="p">());</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">addControl</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">ZoomSlider</span><span class="p">());</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">addControl</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">MousePosition</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">coordinateFormat</span><span class="o">:</span><span class="w"> </span><span class="nx">createStringXY</span><span class="p">(</span><span class="mf">4</span><span class="p">),</span>
+<span class="w">  </span><span class="nx">projection</span><span class="o">:</span><span class="w"> </span><span class="s1">'EPSG:4326'</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">'mouse-coords'</span><span class="p">)</span>
+<span class="p">}));</span>
 </code></pre></div>
 <hr />
 <h2 id="7-systematic-troubleshooting-debugging">7. Systematic Troubleshooting &amp; Debugging</h2>
@@ -1302,54 +1314,53 @@ OpenLayers Map Instance
     Step2 --&gt;|HTTP 400 Bad Request| Fix400[Inspect XML ServiceException: check SRS, BBOX, or parameter names]
     Step2 --&gt;|HTTP 200 with 0 Bytes / Empty Features| FixData[Check PostGIS data table or WFS filter condition]
     Step2 --&gt;|HTTP 200 Images Returning OK| Step3{Visual &amp; Geometry Checks}
-    Step3 --&gt;|Points Hidden Under Districts| FixZIndex[Ensure hospitalLayer zIndex &gt; districtsLayer zIndex]
+    Step3 --&gt;|Points Hidden Under Countries| FixZIndex[Ensure cityLayer zIndex &gt; countriesLayer zIndex]
     Step3 --&gt;|Map Blank / White Screen| FixExtent[Verify View center coordinates are in EPSG:3857 via fromLonLat]</code></pre>
 <h3 id="top-5-common-pitfalls">Top 5 Common Pitfalls:</h3>
 <ul>
 <li><strong>Coordinate Misprojection:</strong> Passing raw latitude/longitude degrees <code>[73.85, 18.52]</code> directly to <code>new View({ center: ... })</code> without calling <code>fromLonLat([73.85, 18.52])</code>. The map centers in the Atlantic Ocean off the coast of Africa.</li>
 <li><strong>Missing <code>ol.css</code>:</strong> Forgetting <code>import 'ol/ol.css';</code> causes map controls, zoom buttons, and attribution text to appear as broken, stacked text in the corner of the screen.</li>
 <li><strong>CORS Violations:</strong> Browsers blocking WFS GeoJSON requests from <code>http://localhost:5173</code> to <code>http://localhost:8080</code> because GeoServer CORS filter is commented out.</li>
-<li><strong>Z-Index Inversion:</strong> Adding <code>hospitalLayer</code> before <code>districtsLayer</code> without explicit <code>zIndex</code> values, causing the opaque district polygons to cover the hospital markers.</li>
+<li><strong>Z-Index Inversion:</strong> Adding <code>cityLayer</code> before <code>countriesLayer</code> without explicit <code>zIndex</code> values, causing the opaque country polygons to cover the city points.</li>
 <li><strong>WFS Version Parameter:</strong> WFS 2.0 uses <code>typeNames</code> and <code>count</code>, whereas WFS 1.1 uses <code>typeName</code> and <code>maxFeatures</code>. Mixing these parameters can return empty XML.</li>
 </ul>
 <hr />
 <h3 id="reference-resources">Reference resources</h3>
 <ul>
 <li><strong>OpenLayers Core API Reference:</strong> <a href="https://openlayers.org/en/latest/apidoc/">https://openlayers.org/en/latest/apidoc/</a></li>
-<li><strong>OpenLayers Official Examples Catalog:</strong> <a href="https://openlayers.org/en/latest/examples/">https://openlayers.org/en/latest/examples/</a></li>
+<li><strong>Natural Earth Datasets:</strong> <a href="https://www.naturalearthdata.com/downloads/">https://www.naturalearthdata.com/downloads/</a></li>
 <li><strong>GeoServer Web Map Service (WMS) Reference:</strong> <a href="https://docs.geoserver.org/latest/en/user/services/wms/">https://docs.geoserver.org/latest/en/user/services/wms/</a></li>
 <li><strong>GeoServer Web Feature Service (WFS) Reference:</strong> <a href="https://docs.geoserver.org/latest/en/user/services/wfs/">https://docs.geoserver.org/latest/en/user/services/wfs/</a></li>
 <li><strong>MDN Web Docs — Developer Tools Network Tab:</strong> <a href="https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Solve_HTML_problems/Cross_network_debugging">https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Solve_HTML_problems/Cross_network_debugging</a></li>
 </ul>
 <hr />
 <h3 id="practical-activity">Practical activity</h3>
-<p><strong>Your Task:</strong></p>
 <h4 id="core-challenge">Core Challenge</h4>
 <p>Build the application independently using the requirements below. You may refer to the OpenLayers API documentation and your previous module examples. Use Developer Tools to troubleshoot issues before asking for help.</p>
 <ol>
 <li><strong>Base Map &amp; Constraints:</strong></li>
 <li>Initialize an OpenLayers map in <code>#map</code>.</li>
 <li>Set the <code>View</code> projection to <code>EPSG:3857</code>.</li>
-<li>Center the map over your study region using <code>fromLonLat([lon, lat])</code>.</li>
-<li>Enforce navigation limits using <code>minZoom: 6</code> and <code>maxZoom: 18</code>.</li>
+<li>Center the map globally using <code>fromLonLat([0, 20])</code>.</li>
+<li>Enforce navigation limits using <code>minZoom: 2</code> and <code>maxZoom: 18</code>.</li>
 <li>
 <p>Add an OpenStreetMap <code>TileLayer</code> as the base layer (<code>zIndex: 0</code>).</p>
 </li>
 <li>
-<p><strong>GeoServer WMS Districts Layer:</strong></p>
+<p><strong>GeoServer WMS Countries Layer:</strong></p>
 </li>
 <li>Add an <code>ImageLayer</code> powered by <code>ImageWMS</code> connecting to GeoServer (<code>http://localhost:8080/geoserver/wms</code>).</li>
-<li>Request the <code>training:districts</code> layer with <code>TRANSPARENT: true</code>.</li>
+<li>Request the <code>training:ne_10m_admin_0_countries</code> layer with <code>TRANSPARENT: true</code>.</li>
 <li>
-<p>Set <code>zIndex: 1</code> so the district boundaries sit above OSM but below point features.</p>
+<p>Set <code>zIndex: 1</code> so country boundaries sit above OSM but below city points.</p>
 </li>
 <li>
-<p><strong>GeoServer WFS Hospitals Layer &amp; Dynamic Styling:</strong></p>
+<p><strong>GeoServer WFS Populated Places Layer &amp; Dynamic Styling:</strong></p>
 </li>
-<li>Add a <code>VectorLayer</code> consuming the <code>training:hospitals</code> layer via WFS as GeoJSON.</li>
+<li>Add a <code>VectorLayer</code> consuming <code>training:ne_10m_populated_places</code> via WFS as GeoJSON.</li>
 <li>Implement a dynamic style function:<ul>
-<li>If <code>capacity &gt; 100</code>: Render a <strong>Red</strong> circle marker (radius: 8).</li>
-<li>Otherwise: Render a <strong>Blue</strong> circle marker (radius: 6).</li>
+<li>If <code>FEATURECLA === 'Admin-0 capital'</code>: Render a <strong>Gold/Amber</strong> marker (radius: 8).</li>
+<li>Otherwise: Render a <strong>Blue</strong> marker (radius: 5).</li>
 </ul>
 </li>
 <li>
@@ -1360,79 +1371,136 @@ OpenLayers Map Instance
 </li>
 <li>Add a <code>Select</code> interaction configured to trigger on <code>click</code>.</li>
 <li>
-<p>When a hospital is selected, extract its properties (<code>name</code>, <code>capacity</code>, <code>district</code>) and render them inside an HTML info panel outside the map.</p>
+<p>When a city is selected, extract its properties (<code>NAME</code>, <code>ADM0NAME</code>, <code>POP_MAX</code>, <code>FEATURECLA</code>) and render them inside an HTML info panel outside the map.</p>
 </li>
 <li>
 <p><strong>Map Controls:</strong></p>
 </li>
 <li>Add a visible <code>ScaleLine</code> control with metric units.</li>
 <li>Add a <code>FullScreen</code> control button.</li>
+<li>Add a <code>ZoomSlider</code> control.</li>
 </ol>
 <hr />
 <h4 id="extension-challenge">Extension Challenge</h4>
 <p>Once the core application is working, choose any <strong>two</strong> extension tasks below and implement them:</p>
 <ul>
-<li><strong>Option A — Interactive Hover Effect:</strong> Add a <code>pointermove</code> listener that changes the browser cursor to <code>'pointer'</code> and applies a cyan highlight stroke when hovering over a hospital.</li>
-<li><strong>Option B — Coordinate Popup Overlay:</strong> Replace the external info panel with an <code>ol/Overlay</code> popup card anchored directly over the clicked hospital's coordinates.</li>
-<li><strong>Option C — Hospital Capacity Legend:</strong> Build an HTML legend card in the corner of the map displaying the red (&gt; 100 beds) and blue (&lt;= 100 beds) symbology keys.</li>
-<li><strong>Option D — Dynamic CQL Filter:</strong> Add an HTML <code>&lt;input&gt;</code> or dropdown that dynamically applies a <code>CQL_FILTER</code> (e.g., <code>capacity &gt;= 150</code>) to the layer without reloading the page.</li>
-<li><strong>Option E — Layer Visibility Switcher:</strong> Add UI checkboxes that toggle the visibility of the Districts and Hospitals layers independently (<code>layer.setVisible()</code>).</li>
-<li><strong>Option F — Live Feature Counter:</strong> Display a badge in the UI header showing the total number of hospital features currently loaded in the <code>VectorSource</code>.</li>
+<li><strong>Option A — Interactive Hover Effect:</strong> Add a <code>pointermove</code> listener that changes the browser cursor to <code>'pointer'</code> and applies a cyan highlight stroke when hovering over a city.</li>
+<li><strong>Option B — Coordinate Popup Overlay:</strong> Replace the external info panel with an <code>ol/Overlay</code> popup card anchored directly over the clicked city's coordinates.</li>
+<li><strong>Option C — Dynamic Megacities Filter:</strong> Add an HTML <code>&lt;button&gt;</code> that dynamically applies a <code>CQL_FILTER</code> (<code>POP_MAX &gt;= 5000000</code>) to the layer without reloading the page.</li>
+<li><strong>Option D — Layer Visibility Switcher:</strong> Add UI checkboxes that toggle the visibility of the Countries and Cities layers independently (<code>layer.setVisible()</code>).</li>
+<li><strong>Option E — Live Feature Counter:</strong> Display a badge in the UI header showing the total number of cities loaded in the <code>VectorSource</code>.</li>
 </ul>
 <hr />
-<h4 id="example-implementation-mainjs-and-indexhtml">Example Implementation (<code>main.js</code> and <code>index.html</code>):</h4>
+<h4 id="complete-implementation-mainjs-and-indexhtml">Complete Implementation (<code>main.js</code> and <code>index.html</code>):</h4>
 <h5 id="html-layout-indexhtml">HTML Layout (<code>index.html</code>):</h5>
 <div class="highlight"><pre><span></span><code><span class="cp">&lt;!DOCTYPE html&gt;</span>
-<span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="o">=</span><span class="s">"en"</span><span class="p">&gt;</span>
 <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
-  <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">charset</span><span class="o">=</span><span class="s">&quot;UTF-8&quot;</span><span class="p">&gt;</span>
-  <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>City Healthcare GIS Portal<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
-  <span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;./style.css&quot;</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">charset</span><span class="o">=</span><span class="s">"UTF-8"</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>Global Cities <span class="err">&amp;</span> Nations Geoportal<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">"stylesheet"</span> <span class="na">href</span><span class="o">=</span><span class="s">"./style.css"</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">style</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="nt">body</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">margin</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">      </span><span class="k">font-family</span><span class="p">:</span><span class="w"> </span><span class="s1">'Inter'</span><span class="p">,</span><span class="w"> </span><span class="n">system-ui</span><span class="p">,</span><span class="w"> </span><span class="kc">sans-serif</span><span class="p">;</span>
+<span class="w">      </span><span class="k">display</span><span class="p">:</span><span class="w"> </span><span class="kc">flex</span><span class="p">;</span>
+<span class="w">      </span><span class="k">flex-direction</span><span class="p">:</span><span class="w"> </span><span class="kc">column</span><span class="p">;</span>
+<span class="w">      </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="kt">vh</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">.</span><span class="nc">app-header</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">background</span><span class="p">:</span><span class="w"> </span><span class="mh">#0f172a</span><span class="p">;</span>
+<span class="w">      </span><span class="k">color</span><span class="p">:</span><span class="w"> </span><span class="kc">white</span><span class="p">;</span>
+<span class="w">      </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="kt">px</span><span class="w"> </span><span class="mi">20</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">      </span><span class="k">display</span><span class="p">:</span><span class="w"> </span><span class="kc">flex</span><span class="p">;</span>
+<span class="w">      </span><span class="k">justify-content</span><span class="p">:</span><span class="w"> </span><span class="kc">space-between</span><span class="p">;</span>
+<span class="w">      </span><span class="k">align-items</span><span class="p">:</span><span class="w"> </span><span class="kc">center</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">.</span><span class="nc">main-container</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">display</span><span class="p">:</span><span class="w"> </span><span class="kc">flex</span><span class="p">;</span>
+<span class="w">      </span><span class="k">flex</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">      </span><span class="k">position</span><span class="p">:</span><span class="w"> </span><span class="kc">relative</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">#</span><span class="nn">map</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">flex</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">      </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">.</span><span class="nc">sidebar</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mi">320</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">      </span><span class="k">background</span><span class="p">:</span><span class="w"> </span><span class="mh">#f8fafc</span><span class="p">;</span>
+<span class="w">      </span><span class="k">border-left</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="kt">px</span><span class="w"> </span><span class="kc">solid</span><span class="w"> </span><span class="mh">#e2e8f0</span><span class="p">;</span>
+<span class="w">      </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">      </span><span class="k">box-sizing</span><span class="p">:</span><span class="w"> </span><span class="kc">border-box</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">.</span><span class="nc">badge</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">background</span><span class="p">:</span><span class="w"> </span><span class="mh">#0284c7</span><span class="p">;</span>
+<span class="w">      </span><span class="k">color</span><span class="p">:</span><span class="w"> </span><span class="kc">white</span><span class="p">;</span>
+<span class="w">      </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="kt">px</span><span class="w"> </span><span class="mi">10</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">      </span><span class="k">border-radius</span><span class="p">:</span><span class="w"> </span><span class="mi">999</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">      </span><span class="k">font-size</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">      </span><span class="k">font-weight</span><span class="p">:</span><span class="w"> </span><span class="mi">600</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">.</span><span class="nc">legend-item</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">display</span><span class="p">:</span><span class="w"> </span><span class="kc">flex</span><span class="p">;</span>
+<span class="w">      </span><span class="k">align-items</span><span class="p">:</span><span class="w"> </span><span class="kc">center</span><span class="p">;</span>
+<span class="w">      </span><span class="k">gap</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">      </span><span class="k">margin-top</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">      </span><span class="k">font-size</span><span class="p">:</span><span class="w"> </span><span class="mi">13</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">.</span><span class="nc">dot</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">      </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">      </span><span class="k">border-radius</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">      </span><span class="k">display</span><span class="p">:</span><span class="w"> </span><span class="kc">inline-block</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">.</span><span class="nc">dot</span><span class="p">.</span><span class="nc">gold</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">background</span><span class="p">:</span><span class="w"> </span><span class="mh">#d97706</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">.</span><span class="nc">dot</span><span class="p">.</span><span class="nc">blue</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">background</span><span class="p">:</span><span class="w"> </span><span class="mh">#2563eb</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">&lt;/</span><span class="nt">style</span><span class="p">&gt;</span>
 <span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
 <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
-  <span class="p">&lt;</span><span class="nt">header</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;app-header&quot;</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span>City Healthcare GIS Portal<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">&quot;feature-counter&quot;</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;badge&quot;</span><span class="p">&gt;</span>Loading features...<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">header</span> <span class="na">class</span><span class="o">=</span><span class="s">"app-header"</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">h1</span> <span class="na">style</span><span class="o">=</span><span class="s">"margin: 0; font-size: 18px;"</span><span class="p">&gt;</span>Global Cities <span class="err">&amp;</span> Nations Geoportal<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">"feature-counter"</span> <span class="na">class</span><span class="o">=</span><span class="s">"badge"</span><span class="p">&gt;</span>Loading features...<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
   <span class="p">&lt;/</span><span class="nt">header</span><span class="p">&gt;</span>
 
-  <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;main-container&quot;</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">&quot;map&quot;</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;map-view&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"main-container"</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">"map"</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
 
-    <span class="p">&lt;</span><span class="nt">aside</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;sidebar&quot;</span><span class="p">&gt;</span>
-      <span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span>Facility Information<span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
-      <span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">&quot;feature-details&quot;</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">p</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;placeholder&quot;</span><span class="p">&gt;</span>Click any hospital marker on the map to inspect details.<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">aside</span> <span class="na">class</span><span class="o">=</span><span class="s">"sidebar"</span><span class="p">&gt;</span>
+      <span class="p">&lt;</span><span class="nt">h2</span> <span class="na">style</span><span class="o">=</span><span class="s">"font-size: 16px; margin-top: 0;"</span><span class="p">&gt;</span>City Details<span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+      <span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">"feature-details"</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">p</span> <span class="na">class</span><span class="o">=</span><span class="s">"placeholder"</span> <span class="na">style</span><span class="o">=</span><span class="s">"color: #64748b; font-size: 13px;"</span><span class="p">&gt;</span>Click any city marker on the map to inspect details.<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
       <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
 
-      <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;legend&quot;</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;</span>Symbology<span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;legend-item&quot;</span><span class="p">&gt;&lt;</span><span class="nt">span</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;dot red&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">span</span><span class="p">&gt;</span> Major Hospital (<span class="ni">&amp;gt;</span> 100 beds)<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;legend-item&quot;</span><span class="p">&gt;&lt;</span><span class="nt">span</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;dot blue&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">span</span><span class="p">&gt;</span> Standard Clinic (<span class="ni">&amp;le;</span> 100 beds)<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+      <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"legend"</span> <span class="na">style</span><span class="o">=</span><span class="s">"margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 16px;"</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">h3</span> <span class="na">style</span><span class="o">=</span><span class="s">"font-size: 14px; margin-top: 0;"</span><span class="p">&gt;</span>Symbology<span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"legend-item"</span><span class="p">&gt;&lt;</span><span class="nt">span</span> <span class="na">class</span><span class="o">=</span><span class="s">"dot gold"</span><span class="p">&gt;&lt;/</span><span class="nt">span</span><span class="p">&gt;</span> National Capital (Admin-0)<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">"legend-item"</span><span class="p">&gt;&lt;</span><span class="nt">span</span> <span class="na">class</span><span class="o">=</span><span class="s">"dot blue"</span><span class="p">&gt;&lt;/</span><span class="nt">span</span><span class="p">&gt;</span> Standard Populated Place<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
       <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
     <span class="p">&lt;/</span><span class="nt">aside</span><span class="p">&gt;</span>
   <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
 
-  <span class="p">&lt;</span><span class="nt">script</span> <span class="na">type</span><span class="o">=</span><span class="s">&quot;module&quot;</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;./main.js&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">script</span> <span class="na">type</span><span class="o">=</span><span class="s">"module"</span> <span class="na">src</span><span class="o">=</span><span class="s">"./main.js"</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
 <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
 <span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
 </code></pre></div>
 <h5 id="application-logic-mainjs">Application Logic (<code>main.js</code>):</h5>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/Map.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/View.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Tile.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">ImageLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Image.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Vector.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/OSM.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">ImageWMS</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/ImageWMS.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">VectorSource</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/Vector.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">GeoJSON</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/format/GeoJSON.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">Select</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/interaction/Select.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/control/ScaleLine.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">FullScreen</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/control/FullScreen.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">click</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/events/condition.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Style</span><span class="p">,</span><span class="w"> </span><span class="nx">Circle</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">,</span><span class="w"> </span><span class="nx">Fill</span><span class="p">,</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">,</span><span class="w"> </span><span class="nx">Text</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/style.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/proj.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="s1">&#39;ol/ol.css&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/Map.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/View.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Tile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ImageLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Image.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Vector.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/OSM.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ImageWMS</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/ImageWMS.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">VectorSource</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/Vector.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">GeoJSON</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/format/GeoJSON.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Select</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/interaction/Select.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/control/ScaleLine.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">FullScreen</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/control/FullScreen.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ZoomSlider</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/control/ZoomSlider.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">click</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/events/condition.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Style</span><span class="p">,</span><span class="w"> </span><span class="nx">Circle</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">,</span><span class="w"> </span><span class="nx">Fill</span><span class="p">,</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">,</span><span class="w"> </span><span class="nx">Text</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/style.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/proj.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">'ol/ol.css'</span><span class="p">;</span>
 
 <span class="c1">// 1. Base Layer (OSM)</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">baseLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">TileLayer</span><span class="p">({</span>
@@ -1440,133 +1508,135 @@ OpenLayers Map Instance
 <span class="w">  </span><span class="nx">zIndex</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span>
 <span class="p">});</span>
 
-<span class="c1">// 2. Operational WMS Layer: Districts</span>
-<span class="kd">const</span><span class="w"> </span><span class="nx">districtsLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ImageLayer</span><span class="p">({</span>
+<span class="c1">// 2. Operational WMS Layer: Natural Earth Countries</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">countriesLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ImageLayer</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ImageWMS</span><span class="p">({</span>
-<span class="w">    </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;http://localhost:8080/geoserver/wms&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">'http://localhost:8080/geoserver/wms'</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">params</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="s1">&#39;LAYERS&#39;</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;training:districts&#39;</span><span class="p">,</span>
-<span class="w">      </span><span class="s1">&#39;TRANSPARENT&#39;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<span class="w">      </span><span class="s1">&#39;FORMAT&#39;</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;image/png&#39;</span>
+<span class="w">      </span><span class="s1">'LAYERS'</span><span class="o">:</span><span class="w"> </span><span class="s1">'training:ne_10m_admin_0_countries'</span><span class="p">,</span>
+<span class="w">      </span><span class="s1">'TRANSPARENT'</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="s1">'FORMAT'</span><span class="o">:</span><span class="w"> </span><span class="s1">'image/png'</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nx">serverType</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;geoserver&#39;</span>
+<span class="w">    </span><span class="nx">serverType</span><span class="o">:</span><span class="w"> </span><span class="s1">'geoserver'</span>
 <span class="w">  </span><span class="p">}),</span>
-<span class="w">  </span><span class="nx">opacity</span><span class="o">:</span><span class="w"> </span><span class="mf">0.7</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">opacity</span><span class="o">:</span><span class="w"> </span><span class="mf">0.65</span><span class="p">,</span>
 <span class="w">  </span><span class="nx">zIndex</span><span class="o">:</span><span class="w"> </span><span class="mf">1</span>
 <span class="p">});</span>
 
-<span class="c1">// 3. Dynamic Styles for Healthcare Facilities</span>
-<span class="kd">const</span><span class="w"> </span><span class="nx">majorHospitalStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
+<span class="c1">// 3. Dynamic Styles for Populated Places</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">capitalStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">image</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">({</span>
-<span class="w">    </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">9</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#D32F2F&#39;</span><span class="w"> </span><span class="p">}),</span>
-<span class="w">    </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#FFFFFF&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="p">})</span>
+<span class="w">    </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">8</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#D97706'</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">    </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#FFFFFF'</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="p">})</span>
 <span class="w">  </span><span class="p">})</span>
 <span class="p">});</span>
 
-<span class="kd">const</span><span class="w"> </span><span class="nx">standardClinicStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">standardCityStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">image</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">({</span>
-<span class="w">    </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">6</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#1976D2&#39;</span><span class="w"> </span><span class="p">}),</span>
-<span class="w">    </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#FFFFFF&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">1.5</span><span class="w"> </span><span class="p">})</span>
+<span class="w">    </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">5</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#2563EB'</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">    </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#FFFFFF'</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">1.5</span><span class="w"> </span><span class="p">})</span>
 <span class="w">  </span><span class="p">})</span>
 <span class="p">});</span>
 
-<span class="kd">function</span><span class="w"> </span><span class="nx">hospitalStyleFunction</span><span class="p">(</span><span class="nx">feature</span><span class="p">,</span><span class="w"> </span><span class="nx">resolution</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">capacity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">feature</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;capacity&#39;</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span>
-<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">baseStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">capacity</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">100</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">majorHospitalStyle</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="nx">standardClinicStyle</span><span class="p">;</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">cityStyleFunction</span><span class="p">(</span><span class="nx">feature</span><span class="p">,</span><span class="w"> </span><span class="nx">resolution</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">featureClass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">feature</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">'FEATURECLA'</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">feature</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">'featurecla'</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">base</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">featureClass</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">'Admin-0 capital'</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">capitalStyle</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="nx">standardCityStyle</span><span class="p">;</span>
 
-<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">resolution</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">30</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">resolution</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">5000</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
-<span class="w">      </span><span class="nx">image</span><span class="o">:</span><span class="w"> </span><span class="nx">baseStyle</span><span class="p">.</span><span class="nx">getImage</span><span class="p">(),</span>
+<span class="w">      </span><span class="nx">image</span><span class="o">:</span><span class="w"> </span><span class="nx">base</span><span class="p">.</span><span class="nx">getImage</span><span class="p">(),</span>
 <span class="w">      </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Text</span><span class="p">({</span>
-<span class="w">        </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="nx">feature</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
-<span class="w">        </span><span class="nx">font</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;bold 12px Inter, sans-serif&#39;</span><span class="p">,</span>
-<span class="w">        </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#1A1A1A&#39;</span><span class="w"> </span><span class="p">}),</span>
-<span class="w">        </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#FFFFFF&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">3</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="nx">feature</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">'NAME'</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">feature</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">'name'</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">''</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">font</span><span class="o">:</span><span class="w"> </span><span class="s1">'bold 12px Inter, sans-serif'</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#0F172A'</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#FFFFFF'</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">3</span><span class="w"> </span><span class="p">}),</span>
 <span class="w">        </span><span class="nx">offsetY</span><span class="o">:</span><span class="w"> </span><span class="o">-</span><span class="mf">14</span>
 <span class="w">      </span><span class="p">})</span>
 <span class="w">    </span><span class="p">});</span>
 <span class="w">  </span><span class="p">}</span>
 
-<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">baseStyle</span><span class="p">;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">base</span><span class="p">;</span>
 <span class="p">}</span>
 
-<span class="c1">// 4. Vector WFS Layer: Hospitals (with fallback GeoJSON for training)</span>
-<span class="kd">const</span><span class="w"> </span><span class="nx">hospitalSource</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorSource</span><span class="p">({</span>
+<span class="c1">// 4. Vector Layer: Populated Places (via WFS or local GeoJSON)</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">citySource</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorSource</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">format</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">GeoJSON</span><span class="p">(),</span>
-<span class="w">  </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;http://localhost:8080/geoserver/wfs?service=WFS&amp;version=2.0.0&amp;request=GetFeature&amp;typeNames=training:hospitals&amp;outputFormat=application/json&#39;</span>
+<span class="w">  </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">'http://localhost:8080/geoserver/wfs?service=WFS&amp;version=2.0.0&amp;request=GetFeature&amp;typeNames=training:ne_10m_populated_places&amp;outputFormat=application/json'</span>
 <span class="p">});</span>
 
-<span class="kd">const</span><span class="w"> </span><span class="nx">hospitalLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="nx">hospitalSource</span><span class="p">,</span>
-<span class="w">  </span><span class="nx">style</span><span class="o">:</span><span class="w"> </span><span class="nx">hospitalStyleFunction</span><span class="p">,</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">cityLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="nx">citySource</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">style</span><span class="o">:</span><span class="w"> </span><span class="nx">cityStyleFunction</span><span class="p">,</span>
 <span class="w">  </span><span class="nx">zIndex</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span>
 <span class="p">});</span>
 
-<span class="c1">// Update feature counter when WFS features load</span>
-<span class="nx">hospitalSource</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;featuresloadend&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">hospitalSource</span><span class="p">.</span><span class="nx">getFeatures</span><span class="p">().</span><span class="nx">length</span><span class="p">;</span>
-<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">counterEl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;feature-counter&#39;</span><span class="p">);</span>
+<span class="c1">// Update feature counter when features load</span>
+<span class="nx">citySource</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">'featuresloadend'</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">citySource</span><span class="p">.</span><span class="nx">getFeatures</span><span class="p">().</span><span class="nx">length</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">counterEl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">'feature-counter'</span><span class="p">);</span>
 <span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">counterEl</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nx">counterEl</span><span class="p">.</span><span class="nx">textContent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">count</span><span class="si">}</span><span class="sb"> facilities loaded`</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">counterEl</span><span class="p">.</span><span class="nx">textContent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">count</span><span class="si">}</span><span class="sb"> cities loaded`</span><span class="p">;</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">});</span>
 
 <span class="c1">// 5. Map Initialization</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
-<span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">baseLayer</span><span class="p">,</span><span class="w"> </span><span class="nx">districtsLayer</span><span class="p">,</span><span class="w"> </span><span class="nx">hospitalLayer</span><span class="p">],</span>
+<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">'map'</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">baseLayer</span><span class="p">,</span><span class="w"> </span><span class="nx">countriesLayer</span><span class="p">,</span><span class="w"> </span><span class="nx">cityLayer</span><span class="p">],</span>
 <span class="w">  </span><span class="nx">view</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">View</span><span class="p">({</span>
-<span class="w">    </span><span class="nx">center</span><span class="o">:</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">([</span><span class="mf">73.8567</span><span class="p">,</span><span class="w"> </span><span class="mf">18.5204</span><span class="p">]),</span>
-<span class="w">    </span><span class="nx">zoom</span><span class="o">:</span><span class="w"> </span><span class="mf">12</span><span class="p">,</span>
-<span class="w">    </span><span class="nx">minZoom</span><span class="o">:</span><span class="w"> </span><span class="mf">6</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">center</span><span class="o">:</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">([</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="mf">20</span><span class="p">]),</span>
+<span class="w">    </span><span class="nx">zoom</span><span class="o">:</span><span class="w"> </span><span class="mf">3</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">minZoom</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">maxZoom</span><span class="o">:</span><span class="w"> </span><span class="mf">18</span>
 <span class="w">  </span><span class="p">})</span>
 <span class="p">});</span>
 
 <span class="c1">// 6. Map Controls</span>
-<span class="nx">map</span><span class="p">.</span><span class="nx">addControl</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="p">({</span><span class="w"> </span><span class="nx">units</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;metric&#39;</span><span class="w"> </span><span class="p">}));</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">addControl</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">ScaleLine</span><span class="p">({</span><span class="w"> </span><span class="nx">units</span><span class="o">:</span><span class="w"> </span><span class="s1">'metric'</span><span class="p">,</span><span class="w"> </span><span class="nx">bar</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nx">steps</span><span class="o">:</span><span class="w"> </span><span class="mf">4</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}));</span>
 <span class="nx">map</span><span class="p">.</span><span class="nx">addControl</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">FullScreen</span><span class="p">());</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">addControl</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">ZoomSlider</span><span class="p">());</span>
 
 <span class="c1">// 7. Interactive Feature Selection</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">select</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Select</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">condition</span><span class="o">:</span><span class="w"> </span><span class="nx">click</span><span class="p">,</span>
-<span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">hospitalLayer</span><span class="p">],</span>
+<span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">cityLayer</span><span class="p">],</span>
 <span class="w">  </span><span class="nx">hitTolerance</span><span class="o">:</span><span class="w"> </span><span class="mf">5</span><span class="p">,</span>
 <span class="w">  </span><span class="nx">style</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
 <span class="w">    </span><span class="nx">image</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">({</span>
-<span class="w">      </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">12</span><span class="p">,</span>
-<span class="w">      </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#FFD600&#39;</span><span class="w"> </span><span class="p">}),</span>
-<span class="w">      </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#212121&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">2.5</span><span class="w"> </span><span class="p">})</span>
+<span class="w">      </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">11</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#E11D48'</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">      </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#FFFFFF'</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">2.5</span><span class="w"> </span><span class="p">})</span>
 <span class="w">    </span><span class="p">})</span>
 <span class="w">  </span><span class="p">})</span>
 <span class="p">});</span>
 <span class="nx">map</span><span class="p">.</span><span class="nx">addInteraction</span><span class="p">(</span><span class="nx">select</span><span class="p">);</span>
 
-<span class="kd">const</span><span class="w"> </span><span class="nx">infoPanel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;feature-details&#39;</span><span class="p">);</span>
-<span class="nx">select</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;select&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">infoPanel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">'feature-details'</span><span class="p">);</span>
+<span class="nx">select</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">'select'</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">selected</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">props</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">selected</span><span class="p">[</span><span class="mf">0</span><span class="p">].</span><span class="nx">getProperties</span><span class="p">();</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">pop</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">props</span><span class="p">.</span><span class="nx">POP_MAX</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nb">Number</span><span class="p">(</span><span class="nx">props</span><span class="p">.</span><span class="nx">POP_MAX</span><span class="p">).</span><span class="nx">toLocaleString</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">'N/A'</span><span class="p">;</span>
 <span class="w">    </span><span class="nx">infoPanel</span><span class="p">.</span><span class="nx">innerHTML</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`</span>
-<span class="sb">      &lt;h3 style=&quot;margin-top:0; color:#1976D2;&quot;&gt;</span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">name</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">&#39;Healthcare Facility&#39;</span><span class="si">}</span><span class="sb">&lt;/h3&gt;</span>
-<span class="sb">      &lt;p&gt;&lt;strong&gt;Bed Capacity:&lt;/strong&gt; </span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">capacity</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">&#39;N/A&#39;</span><span class="si">}</span><span class="sb">&lt;/p&gt;</span>
-<span class="sb">      &lt;p&gt;&lt;strong&gt;District:&lt;/strong&gt; </span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">district</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">&#39;Municipal Zone&#39;</span><span class="si">}</span><span class="sb">&lt;/p&gt;</span>
-<span class="sb">      &lt;p&gt;&lt;strong&gt;Emergency Unit:&lt;/strong&gt; </span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">emergency</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;Available 24/7&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Standard Hours&#39;</span><span class="si">}</span><span class="sb">&lt;/p&gt;</span>
+<span class="sb">      &lt;h3 style="margin-top:0; color:#0f172a;"&gt;</span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">NAME</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'City'</span><span class="si">}</span><span class="sb">&lt;/h3&gt;</span>
+<span class="sb">      &lt;p style="margin: 4px 0;"&gt;&lt;strong&gt;Country:&lt;/strong&gt; </span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">ADM0NAME</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'N/A'</span><span class="si">}</span><span class="sb">&lt;/p&gt;</span>
+<span class="sb">      &lt;p style="margin: 4px 0;"&gt;&lt;strong&gt;Classification:&lt;/strong&gt; </span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">FEATURECLA</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'N/A'</span><span class="si">}</span><span class="sb">&lt;/p&gt;</span>
+<span class="sb">      &lt;p style="margin: 4px 0;"&gt;&lt;strong&gt;Population:&lt;/strong&gt; </span><span class="si">${</span><span class="nx">pop</span><span class="si">}</span><span class="sb">&lt;/p&gt;</span>
 <span class="sb">    `</span><span class="p">;</span>
 <span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nx">infoPanel</span><span class="p">.</span><span class="nx">innerHTML</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&lt;p class=&quot;placeholder&quot;&gt;Click any hospital marker on the map to inspect details.&lt;/p&gt;&#39;</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">infoPanel</span><span class="p">.</span><span class="nx">innerHTML</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'&lt;p class="placeholder" style="color: #64748b; font-size: 13px;"&gt;Click any city marker on the map to inspect details.&lt;/p&gt;'</span><span class="p">;</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">});</span>
 
 <span class="c1">// 8. Hover Pointer Feedback</span>
-<span class="nx">map</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;pointermove&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">evt</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">'pointermove'</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">evt</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">evt</span><span class="p">.</span><span class="nx">dragging</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
 <span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">hit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">map</span><span class="p">.</span><span class="nx">hasFeatureAtPixel</span><span class="p">(</span><span class="nx">evt</span><span class="p">.</span><span class="nx">pixel</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nx">layerFilter</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">candidate</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">candidate</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">hospitalLayer</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">layerFilter</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">candidate</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">candidate</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">cityLayer</span><span class="p">,</span>
 <span class="w">    </span><span class="nx">hitTolerance</span><span class="o">:</span><span class="w"> </span><span class="mf">3</span>
 <span class="w">  </span><span class="p">});</span>
-<span class="w">  </span><span class="nx">map</span><span class="p">.</span><span class="nx">getTargetElement</span><span class="p">().</span><span class="nx">style</span><span class="p">.</span><span class="nx">cursor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">hit</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;pointer&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">map</span><span class="p">.</span><span class="nx">getTargetElement</span><span class="p">().</span><span class="nx">style</span><span class="p">.</span><span class="nx">cursor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">hit</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">'pointer'</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">''</span><span class="p">;</span>
 <span class="p">});</span>
 </code></pre></div>
 

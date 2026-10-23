@@ -1,604 +1,551 @@
-# Module 5 - Vector Styling & Feature Interaction
+# Module 5 - Map Interactions & Controls
 
-Welcome to Module 5! In this module, we transition from merely loading raw vector coordinates to crafting expressive, responsive, and interactive Web GIS interfaces. We will follow the complete production engineering workflow:
+Welcome to Module 5! In this module, we move beyond passive map viewing and data visualization to give users full control over the map experience. You will master OpenLayers **Interactions** (digitizing vector geometries, editing vertices, and dragging & dropping external spatial files) and **Controls** (visual on-screen UI elements like scale lines, zoom sliders, coordinate readouts, and full-screen toggles).
 
-```text
-Feature Data & Geometry
-          ↓
-Dynamic Style Function (with Caching & Decluttering)
-          ↓
-Symbology, Halo Labels & Custom Icons
-          ↓
-Canvas Pointer Detection (Hover Highlight & Cursor State)
-          ↓
-Selection Interaction & Coordinate-Anchored Popups
+```mermaid
+flowchart TD
+    subgraph Map Container
+        Map[ol/Map Engine]
+        
+        subgraph User Input Handling
+            Interactions[ol/interaction/*]
+            Draw[Draw: Point / Line / Polygon / Box]
+            Modify[Modify: Edit / Move / Delete Vertices]
+            DragDrop[DragAndDrop: GeoJSON / KML / GPX Files]
+            Snap[Snap: Topological Snapping]
+            Interactions --> Draw
+            Interactions --> Modify
+            Interactions --> DragDrop
+            Interactions --> Snap
+        end
+        
+        subgraph Visual UI Elements
+            Controls[ol/control/*]
+            ScaleLine[ScaleLine: Metric / Bar]
+            ZoomControls[Zoom / ZoomSlider / ZoomToExtent]
+            FullScreen[FullScreen: HTML5 Fullscreen API]
+            MousePos[MousePosition: Live Coordinate Readout]
+            Overview[OverviewMap: Inset Mini-Map]
+            Controls --> ScaleLine
+            Controls --> ZoomControls
+            Controls --> FullScreen
+            Controls --> MousePos
+            Controls --> Overview
+        end
+        
+        Interactions --> Map
+        Controls --> Map
+    end
 ```
 
 ---
 
-## 1. Introduction to Vector Styling
+## 1. Interactions vs. Controls
 
-### 1.1 Why Vector Styling is Different from WMS Styling
-In Module 3, we explored server-side WMS styling via GeoServer SLD, where the server renders features into static pixels before sending them across the network. Vector styling in OpenLayers is fundamentally different:
+Before writing code, understand the architectural separation of concerns in OpenLayers:
 
-| Feature | Server-Side WMS Styling (GeoServer / SLD) | Client-Side Vector Styling (OpenLayers) |
-|---|---|---|
-| **Rendering Engine** | Server CPU / GPU (GeoServer) | Browser HTML5 Canvas / WebGL |
-| **Output Type** | Pre-rendered raster image (PNG, JPEG) | Live DOM / Canvas vector paths |
-| **Interactivity** | Requires server roundtrips (`GetFeatureInfo`) | Instant client-side inspection, selection & hover |
-| **Styling Flexibility** | Static XML rules on the server | Full JavaScript logic (conditional, dynamic, animated) |
-| **Styling Speed** | Re-requests images on style changes | Updates instantly in browser memory |
-| **Data Payload** | Map image pixels | Raw coordinates and attributes (GeoJSON/WFS) |
-
-### 1.2 Client-Side Styling in OpenLayers
-
-In OpenLayers, vector layers use the `setStyle()` method to apply visual symbology. Styling can be assigned at two distinct scopes:
-
-- **`VectorLayer`**: `vectorLayer.setStyle(...)` sets the default appearance for all features on the layer.
-- **Individual `Feature`**: `feature.setStyle(...)` overrides the layer style for a specific feature instance (ideal for selection flags, hover highlights, or custom status indicators).
-
-### 1.3 Static vs. Dynamic Styling
-
-- **Static Styling:** A fixed `Style` object applied uniformly to every feature across all zoom levels.
-- **Dynamic Styling:** A JavaScript **Style Function** that inspects each feature's attributes (`feature.get('type')`) or the map's current zoom resolution to return tailored styles dynamically.
-
-### 1.4 Geometry Targets
-
-Styles apply across the three core vector geometry categories:
-
-- **Point / MultiPoint:** Styled with circular vector symbols (`Circle`) or external bitmap/SVG graphics (`Icon`).
-- **LineString / MultiLineString:** Styled with strokes (`Stroke`).
-- **Polygon / MultiPolygon:** Styled with interior fills (`Fill`) and outer boundary strokes (`Stroke`).
-
----
-
-## 2. OpenLayers Style Components
-
-OpenLayers builds symbology using specialized building blocks imported from `ol/style.js`:
-
-```text
-Point Feature
- ├── image: Circle / Icon
- └── text:  Text (Label)
-
-LineString Feature
- ├── stroke: Stroke (Color, Width, Dash)
- └── text:   Text (Label)
-
-Polygon Feature
- ├── fill:   Fill (Color, Opacity)
- ├── stroke: Stroke (Boundary)
- └── text:   Text (Centroid Label)
-```
-
-### 2.1 Core Style Classes
-
-- **`Style`:** The root container that groups together fill, stroke, image, and text symbolizers.
-- **`Fill`:** Defines interior colors and transparencies for polygons, circles, and text backgrounds. Supports HEX, RGB, RGBA, and HSL strings.
-- **`Stroke`:** Defines boundary lines, road paths, and outlines with width, color, and dash patterns.
-- **`Circle` (`CircleStyle`):** Vector circular marker designed specifically for Point geometries.
-- **`Icon`:** External raster (PNG/JPEG) or vector (SVG) image symbol for Point geometries.
-- **`Text`:** Renders dynamic typographic labels anchored to feature geometries.
-
-### 2.2 Core Style Properties Reference
-
-| Component | Property | Description | Example |
+| Concept | Base Class | Primary Purpose | Examples |
 |---|---|---|---|
-| **Fill** | Fill color | HEX, RGB, RGBA, or HSL color string | `color: 'rgba(33, 150, 243, 0.5)'` |
-| **Stroke** | Stroke color | Outline line color | `color: '#1565C0'` |
-| | Stroke width | Line thickness in pixels | `width: 2.5` |
-| | Line dash | Dash-gap array pattern | `lineDash: [6, 6]` (6px dash, 6px space) |
-| **Circle** | Point radius | Radius of circle marker in pixels | `radius: 8` |
-| **Icon** | Icon image | URL or path to image file | `src: '/icons/hospital.svg'` |
-| | Scale | Scaling factor | `scale: 0.8` |
-| | Anchor | Alignment point coordinates | `anchor: [0.5, 1]` (Bottom-center pin) |
-| | Rotation | Rotation angle in radians | `rotation: Math.PI / 4` |
-| **Text** | Text font | Font style, size, and family | `font: 'bold 13px Inter, sans-serif'` |
-| | Text color | Color of the text characters | `fill: new Fill({ color: '#212121' })` |
-| | Text offset | Pixel displacement (X, Y) | `offsetY: -15` (Places text above marker) |
+| **Interactions** | `ol/interaction/Interaction` | Responds to mouse, touch, pointer, and keyboard gestures to alter map navigation or mutate geometry coordinates directly. | `Draw`, `Modify`, `DragAndDrop`, `Snap`, `Translate`, `Select` |
+| **Controls** | `ol/control/Control` | Fixed visual DOM elements positioned over the map viewport that provide status indicators or one-click commands. | `ScaleLine`, `Zoom`, `ZoomSlider`, `FullScreen`, `MousePosition`, `OverviewMap` |
 
 ---
 
-## 3. Static Styling
+## 2. Map Interactions: Digitizing & Editing Vector Data
 
-When all features in a layer share identical cartography, apply a single reusable `Style` object to the `VectorLayer`.
+OpenLayers provides an extensive suite of digitizing interactions that allow users to draw, edit, and manipulate spatial vector features in the browser.
 
-### 3.1 Applying Styles to Points, Lines, and Polygons
+### 2.1 The `Draw` Interaction (`ol/interaction/Draw`)
+
+The `Draw` interaction captures mouse or touch clicks and converts them into OpenLayers `Feature` geometries stored in an underlying `VectorSource`.
 
 ```javascript
-import VectorLayer from 'ol/layer/Vector.js';
-import VectorSource from 'ol/source/Vector.js';
-import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style.js';
+import Draw, { createBox } from 'ol/interaction/Draw.js';
 
-// 1. Polygon Style (Fills and Outlines)
-const parcelStyle = new Style({
-  fill: new Fill({
-    color: 'rgba(76, 175, 80, 0.3)'
-  }),
-  stroke: new Stroke({
-    color: '#2E7D32',
-    width: 2
-  })
+// Instantiate drawing interaction for Polygons
+const draw = new Draw({
+  source: vectorSource,
+  type: 'Polygon'
 });
 
-// 2. LineString Style (Roads / Rivers)
-const roadStyle = new Style({
-  stroke: new Stroke({
-    color: '#FF9800',
-    width: 3,
-    lineDash: [4, 4]
-  })
-});
+map.addInteraction(draw);
+```
 
-// 3. Point Style (Circular Marker)
-const pointStyle = new Style({
-  image: new CircleStyle({
-    radius: 7,
-    fill: new Fill({ color: '#E91E63' }),
-    stroke: new Stroke({ color: '#FFFFFF', width: 2 })
-  })
-});
+#### Supported Drawing Geometry Types:
+- `'Point'`: Places a single coordinate feature on click.
+- `'LineString'`: Draws connected line segments; double-click or enter to finish.
+- `'Polygon'`: Draws a closed boundary; double-click to close and finish.
+- `'Circle'`: Draws a circular geometry defined by a center coordinate and edge radius.
+- `'MultiPoint'`, `'MultiLineString'`, `'MultiPolygon'`: Draws multi-part geometries.
 
-// Apply style to VectorLayer
-const vectorLayer = new VectorLayer({
-  source: new VectorSource({ /* ... */ }),
-  style: parcelStyle
+#### Freehand Drawing
+For pencil/scribble digitizing, set `freehand: true`:
+```javascript
+const freehandDraw = new Draw({
+  source: vectorSource,
+  type: 'LineString',
+  freehand: true
 });
 ```
 
-### 3.2 The Importance of Reusable Style Objects
-Always define style objects outside render loops:
-
+#### Drawing Rectangles / Bounding Boxes
+To draw rectangular bounding boxes, set `type: 'Circle'` and use the built-in `createBox()` geometry function:
 ```javascript
-vectorLayer.setStyle(myStyle);
+import Draw, { createBox } from 'ol/interaction/Draw.js';
+
+const boxDraw = new Draw({
+  source: vectorSource,
+  type: 'Circle',
+  geometryFunction: createBox()
+});
 ```
 
-> **The Mechanics of Reusable Styles:** OpenLayers executes the styling pipeline every time a frame is rendered (during pan, zoom, or animations at 60 FPS). Reusing pre-instantiated style objects prevents allocating thousands of temporary JavaScript objects, avoiding browser garbage-collection pauses and stuttering animations.
+#### Capturing Draw Events
+Listen to `drawstart` and `drawend` lifecycle events to attach attributes or perform calculations:
+```javascript
+draw.on('drawstart', (event) => {
+  console.log('User started drawing a geometry...');
+});
+
+draw.on('drawend', (event) => {
+  const feature = event.feature;
+  feature.set('createdAt', new Date().toISOString());
+  console.log('Finished drawing feature:', feature.getGeometry().getType());
+});
+```
 
 ---
 
-## 4. Attribute-Based Dynamic Styling
+### 2.2 The `Modify` Interaction (`ol/interaction/Modify`)
 
-Real-world applications require thematic styling where feature appearance reflects underlying attributes.
+The `Modify` interaction enables editing existing geometries by clicking and dragging their vertices or inserting new vertices along line segments.
 
-### 4.1 Reading Feature Attributes
-Feature attributes are accessed using `.get()`:
 ```javascript
-const category = feature.get('type');
-const population = feature.get('population');
+import Modify from 'ol/interaction/Modify.js';
+
+const modify = new Modify({
+  source: vectorSource
+});
+
+map.addInteraction(modify);
 ```
 
-### 4.2 Dynamic Style Function
-Pass a function to `vectorLayer.setStyle()`. OpenLayers evaluates the function for each feature:
+#### Key Capabilities of `Modify`:
+1. **Move an Existing Vertex:** Click and drag any existing point/vertex.
+2. **Insert a New Vertex:** Hovering over a line segment or polygon boundary displays a ghost midpoint. Click and drag this midpoint to insert a new vertex.
+3. **Delete a Vertex:** By default, pressing `Alt` + clicking an existing vertex removes it. You can customize this shortcut using `deleteCondition`:
+   ```javascript
+   import { altKeyOnly } from 'ol/events/condition.js';
 
+   const modify = new Modify({
+     source: vectorSource,
+     deleteCondition: altKeyOnly // Hold Alt and click a vertex to remove it
+   });
+   ```
+
+#### Modify Lifecycle Events:
 ```javascript
-const styleFunction = (feature) => {
-  const type = feature.get('type');
-
-  if (type === 'hospital') {
-    return hospitalStyle;
-  }
-
-  if (type === 'school') {
-    return schoolStyle;
-  }
-
-  return defaultStyle;
-};
-
-vectorLayer.setStyle(styleFunction);
-```
-
-### 4.3 Categorized Thematic Styling
-Pre-define reusable styles in a lookup table for maximum efficiency:
-
-```javascript
-const facilityStyles = {
-  hospital: new Style({
-    image: new CircleStyle({
-      radius: 8,
-      fill: new Fill({ color: '#D32F2F' }), // Red
-      stroke: new Stroke({ color: '#FFFFFF', width: 2 })
-    })
-  }),
-  school: new Style({
-    image: new CircleStyle({
-      radius: 8,
-      fill: new Fill({ color: '#1976D2' }), // Blue
-      stroke: new Stroke({ color: '#FFFFFF', width: 2 })
-    })
-  }),
-  default: new Style({
-    image: new CircleStyle({
-      radius: 6,
-      fill: new Fill({ color: '#757575' }), // Gray
-      stroke: new Stroke({ color: '#FFFFFF', width: 1.5 })
-    })
-  })
-};
-
-vectorLayer.setStyle((feature) => {
-  const category = feature.get('type');
-  return facilityStyles[category] || facilityStyles.default;
+modify.on('modifyend', (event) => {
+  const modifiedFeatures = event.features.getArray();
+  console.log(`Updated ${modifiedFeatures.length} features!`);
 });
 ```
 
-### 4.4 Basic Graduated Styling (Numeric Ranges)
-Adjust visual properties (color, size) based on numeric attributes:
+---
+
+### 2.3 Topological Precision: The `Snap` Interaction (`ol/interaction/Snap`)
+
+When digitizing adjacent parcels or connecting pipelines, human pointer movements are rarely pixel-perfect. The **`Snap` interaction** automatically snaps the cursor to existing vertices and edges within a configurable pixel radius:
 
 ```javascript
-function earthquakeStyle(feature) {
-  const mag = feature.get('magnitude');
+import Snap from 'ol/interaction/Snap.js';
 
-  let color = '#4CAF50'; // Low < 4.0
-  let radius = 5;
+const snap = new Snap({
+  source: vectorSource,
+  pixelTolerance: 12 // Snap when cursor comes within 12px of existing vertices
+});
 
-  if (mag >= 6.0) {
-    color = '#D32F2F'; // Severe >= 6.0
-    radius = 12;
-  } else if (mag >= 4.0) {
-    color = '#FB8C00'; // Moderate 4.0 - 5.9
-    radius = 8;
-  }
+// Always add Snap AFTER Draw and Modify interactions!
+map.addInteraction(snap);
+```
 
-  return new Style({
-    image: new CircleStyle({
-      radius: radius,
-      fill: new Fill({ color: color }),
-      stroke: new Stroke({ color: '#FFFFFF', width: 1.5 })
-    })
+> **Order of Interactions:** Always add `Snap` to the map **after** adding `Draw` or `Modify`. OpenLayers evaluates interactions in reverse order of addition; having `Snap` execute first ensures the cursor coordinate snaps *before* the draw or modify interaction processes the click.
+
+---
+
+### 2.4 The `DragAndDrop` Interaction (`ol/interaction/DragAndDrop`)
+
+The `DragAndDrop` interaction enables users to drag spatial files directly from their operating system desktop and drop them onto the map canvas. OpenLayers automatically parses the file and instantiates vector features.
+
+```javascript
+import DragAndDrop from 'ol/interaction/DragAndDrop.js';
+import GeoJSON from 'ol/format/GeoJSON.js';
+import KML from 'ol/format/KML.js';
+import GPX from 'ol/format/GPX.js';
+
+const dragAndDrop = new DragAndDrop({
+  formatConstructors: [
+    GeoJSON,
+    KML,
+    GPX
+  ]
+});
+
+dragAndDrop.on('addfeatures', (event) => {
+  // Features are automatically reprojected to the map view projection!
+  vectorSource.addFeatures(event.features);
+
+  // Zoom view to fit dropped features
+  map.getView().fit(vectorSource.getExtent(), {
+    padding: [40, 40, 40, 40],
+    duration: 600
   });
+});
+
+map.addInteraction(dragAndDrop);
+```
+
+#### Why `DragAndDrop` is Powerful:
+- **Zero Server Overhead:** Files are parsed purely client-side in the browser using HTML5 File API and OpenLayers format parsers.
+- **Automatic Reprojection:** When given the view projection, coordinates are transformed automatically into the map's current coordinate system (`EPSG:3857`).
+
+---
+
+## 3. Map Controls: Enhancing the User Interface
+
+Map controls provide visual context, navigation shortcuts, and metadata overlays.
+
+```text
+Map Viewport
+ ├── Top-Left:      Zoom Controls (+ / -), FullScreen, ZoomSlider
+ ├── Top-Right:     OverviewMap (Mini-Map Inset)
+ ├── Bottom-Left:   ScaleLine (Metric / Nautical / Imperial)
+ └── Bottom-Right:  MousePosition (Coordinates), Attribution
+```
+
+### 3.1 Managing Default Controls
+By default, OpenLayers automatically includes:
+- `Zoom` (+ and - buttons)
+- `Rotate` (bearing reset button when map is rotated)
+- `Attribution` (collapsible copyright notice)
+
+You can customize or disable default controls using `defaults()` from `ol/control/defaults.js`:
+
+```javascript
+import { defaults as defaultControls } from 'ol/control/defaults.js';
+import ScaleLine from 'ol/control/ScaleLine.js';
+import FullScreen from 'ol/control/FullScreen.js';
+
+const map = new Map({
+  target: 'map',
+  layers: [baseLayer],
+  view: new View({ /* ... */ }),
+  // Extend default controls with additional controls
+  controls: defaultControls({
+    zoom: true,
+    rotate: true,
+    attribution: true
+  }).extend([
+    new ScaleLine(),
+    new FullScreen()
+  ])
+});
+```
+
+---
+
+### 3.2 The `ScaleLine` Control (`ol/control/ScaleLine`)
+
+The `ScaleLine` control displays the real-world ground distance corresponding to screen pixels at the current zoom level and latitude.
+
+```javascript
+import ScaleLine from 'ol/control/ScaleLine.js';
+
+const scaleLine = new ScaleLine({
+  units: 'metric',        // 'metric' (m/km), 'imperial' (ft/mi), 'nautical' (nm), 'degrees'
+  bar: true,              // Displays a graphical segmented bar instead of a simple line
+  steps: 4,               // Number of segments in the scale bar
+  text: true,             // Displays distance numbers above segments
+  minWidth: 140           // Minimum pixel width of the control
+});
+
+map.addControl(scaleLine);
+```
+
+#### Customizing ScaleLine Appearance with CSS:
+```css
+.ol-scale-line {
+  background: rgba(15, 23, 42, 0.75);
+  border-radius: 6px;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ol-scale-bar {
+  border-color: #38bdf8;
 }
 ```
 
 ---
 
-## 5. Text Labels
+### 3.3 Zoom Controls
 
-Labels display contextual information directly on the map.
-
+#### 1. Standard `Zoom` Control (`ol/control/Zoom`)
 ```javascript
-new Text({
-  text: feature.get('name'),
-  font: '14px sans-serif',
-  offsetY: -15
+import Zoom from 'ol/control/Zoom.js';
+
+const zoomControl = new Zoom({
+  zoomInLabel: '+',
+  zoomOutLabel: '−',
+  zoomInTipLabel: 'Zoom In',
+  zoomOutTipLabel: 'Zoom Out'
 });
 ```
 
-### 5.1 Label Configuration
-
-- **`text`:** The string to display, typically retrieved from a feature attribute (`feature.get('name')`).
-- **`font`:** Standard CSS font string (e.g., `'bold 12px Inter, sans-serif'`).
-- **`fill`:** Font character color (`new Fill({ color: '#212121' })`).
-- **`stroke`:** Outer halo around letters (`new Stroke({ color: '#FFFFFF', width: 3 })`). Critical for legibility over satellite imagery and street maps.
-- **`backgroundFill` / `backgroundStroke`:** Optional background pill box behind the text.
-- **`offsetY` / `offsetX`:** Pixel displacement relative to the feature geometry center.
-
-### 5.2 Scale & Visibility Control
-Displaying thousands of labels when zoomed out causes visual clutter and slows rendering. Use the `resolution` argument in your style function to display labels only when zoomed in close:
-
+#### 2. `ZoomSlider` Control (`ol/control/ZoomSlider`)
+The `ZoomSlider` displays an interactive draggable slider bar between the zoom buttons:
 ```javascript
-vectorLayer.setStyle((feature, resolution) => {
-  // Only show text labels when resolution is less than 30 meters/pixel (zoomed in)
-  const showLabel = resolution < 30;
+import ZoomSlider from 'ol/control/ZoomSlider.js';
 
-  return new Style({
-    image: pointMarker,
-    text: showLabel ? new Text({
-      text: feature.get('name') || '',
-      font: 'bold 12px sans-serif',
-      fill: new Fill({ color: '#111111' }),
-      stroke: new Stroke({ color: '#FFFFFF', width: 3 }),
-      offsetY: -15
-    }) : undefined
-  });
-});
+const zoomSlider = new ZoomSlider();
+map.addControl(zoomSlider);
 ```
 
-### 5.3 Automated Label Decluttering
-OpenLayers features built-in collision detection to automatically hide overlapping labels and icons. Enable decluttering directly on the `VectorLayer`:
-
+#### 3. `ZoomToExtent` Control (`ol/control/ZoomToExtent`)
+Provides a "Home Extent" button that resets the map view to a specified bounding box:
 ```javascript
-const declutteredLayer = new VectorLayer({
-  source: vectorSource,
-  style: featureStyleFunction,
-  declutter: true // Automatically hides colliding text labels and icons
+import ZoomToExtent from 'ol/control/ZoomToExtent.js';
+import { fromLonLat } from 'ol/proj.js';
+
+const homeExtentButton = new ZoomToExtent({
+  extent: [
+    ...fromLonLat([73.7, 18.4]), // [minX, minY]
+    ...fromLonLat([74.0, 18.6])  // [maxX, maxY]
+  ],
+  label: '⌂',
+  tipLabel: 'Fit to City Bounds'
 });
+
+map.addControl(homeExtentButton);
 ```
 
 ---
 
-## 6. Icons & Custom Symbols
+### 3.4 The `FullScreen` Control (`ol/control/FullScreen`)
 
-Vector points can be styled with custom bitmap (PNG) or vector (SVG) images using `ol/style/Icon`.
+The `FullScreen` control utilizes the HTML5 Fullscreen API to expand the map container to fill the entire physical display.
 
-```text
-Common Web GIS Use Cases:
- Hospital → hospital icon
- School   → school icon
- Airport  → airport icon
-```
-
-### 6.1 Creating an Icon Style
 ```javascript
-import { Style, Icon } from 'ol/style.js';
+import FullScreen from 'ol/control/FullScreen.js';
 
-const hospitalIconStyle = new Style({
-  image: new Icon({
-    src: '/assets/icons/hospital.svg',
-    anchor: [0.5, 1],          // Bottom-center pin tip aligns with coordinate
-    anchorXUnits: 'fraction',
-    anchorYUnits: 'fraction',
-    scale: 0.8,                // Resizes icon
-    rotation: 0                // Rotation in radians
-  })
+const fullScreenControl = new FullScreen({
+  tipLabel: 'Toggle Fullscreen Mode'
 });
+
+map.addControl(fullScreenControl);
 ```
 
-### 6.2 Anchor Positioning
+> **Tip:** If your map has external UI control panels outside the `#map` `<div>`, specify the common parent container as the fullscreen target using `source: 'app-container'`.
 
-The `anchor` property dictates which point of the icon image aligns with the feature's geographic coordinate:
+---
 
-- **`[0.5, 0.5]` (Center):** Default. Best for circular badges, POI symbols, and airport markers.
-- **`[0.5, 1.0]` (Bottom-Center):** Standard for map pin markers so the needle tip points to the location.
+### 3.5 Additional Essential Controls
 
-```text
-       ┌──────────┐
-       │  HOSPITAL│
-       └────┬─────┘
-            ▼  ← Anchor [0.5, 1.0] aligns with geographic coordinate
+#### 1. `MousePosition` (`ol/control/MousePosition`)
+Displays dynamic coordinates of the cursor in real time. You can format the coordinates into Longitude/Latitude degrees using `createStringXY`:
+
+```javascript
+import MousePosition from 'ol/control/MousePosition.js';
+import { createStringXY } from 'ol/coordinate.js';
+
+const mousePosition = new MousePosition({
+  coordinateFormat: createStringXY(4), // 4 decimal places (e.g. 73.8567, 18.5204)
+  projection: 'EPSG:4326',             // Output in WGS 84 Lon/Lat degrees
+  className: 'custom-mouse-position',
+  target: document.getElementById('coordinates-display'), // Render in dedicated HTML element
+  undefinedHTML: 'Coordinates: Point outside map'
+});
+
+map.addControl(mousePosition);
+```
+
+#### 2. `OverviewMap` (`ol/control/OverviewMap`)
+Displays an inset mini-map in the corner showing the larger geographic area and a rectangle representing the current viewport:
+
+```javascript
+import OverviewMap from 'ol/control/OverviewMap.js';
+import TileLayer from 'ol/layer/Tile.js';
+import OSM from 'ol/source/OSM.js';
+
+const overviewMap = new OverviewMap({
+  layers: [
+    new TileLayer({
+      source: new OSM()
+    })
+  ],
+  collapsed: false, // Start expanded
+  collapsible: true
+});
+
+map.addControl(overviewMap);
 ```
 
 ---
 
-## 7. Feature Selection
+## 4. Building a Custom OpenLayers Control
 
-OpenLayers provides the **`Select` interaction** (`ol/interaction/Select`) to capture user clicks, manage selection state, and highlight active features.
+Any standard DOM element can be turned into an OpenLayers control by subclassing or instantiating `ol/control/Control`.
 
 ```javascript
-import Select from 'ol/interaction/Select.js';
-import { click } from 'ol/events/condition.js';
-import { Style, Fill, Stroke } from 'ol/style.js';
+import { Control } from 'ol/control.js';
+import { fromLonLat } from 'ol/proj.js';
 
-// 1. Configure the selection interaction
-const select = new Select({
-  condition: click, // Trigger on mouse click
-  style: new Style({
-    fill: new Fill({ color: 'rgba(255, 235, 59, 0.5)' }),
-    stroke: new Stroke({ color: '#F57F17', width: 3.5 })
-  })
-});
+class HomeControl extends Control {
+  constructor(opt_options) {
+    const options = opt_options || {};
 
-map.addInteraction(select);
+    // 1. Create button element
+    const button = document.createElement('button');
+    button.innerHTML = '🎯';
+    button.title = 'Reset to City Center';
 
-// 2. Listen to the select event
-select.on('select', (event) => {
-  const feature = event.selected[0];
+    // 2. Wrap inside control div
+    const element = document.createElement('div');
+    element.className = 'ol-unselectable ol-control reset-center-control';
+    element.appendChild(button);
 
-  if (feature) {
-    console.log('Selected feature properties:', feature.getProperties());
+    super({
+      element: element,
+      target: options.target
+    });
+
+    // 3. Handle click
+    button.addEventListener('click', () => {
+      this.getMap().getView().animate({
+        center: fromLonLat([73.8567, 18.5204]),
+        zoom: 14,
+        duration: 800
+      });
+    });
   }
-});
-```
+}
 
-### 7.1 Selection Features
-
-- **Selection Condition:** `condition: click` triggers on single clicks; `pointerMove` triggers on hover.
-- **Deselection:** Clicking anywhere on the empty map canvas automatically deselects features.
-- **Selected Array:** `event.selected` contains features just selected; `event.deselected` contains features whose selection was cleared.
-
----
-
-## 8. Hover Interaction
-
-Hover effects provide instant visual feedback as the user navigates across the map canvas.
-
-```text
-Mouse moves (pointermove)
-     ↓
-Feature detected?
-     ↓
-    Yes
-     ↓
-Apply highlight style & change cursor to pointer
-```
-
-### 8.1 Changing the Mouse Cursor
-Inform the user when an element is interactive by updating CSS cursor styling on `pointermove`:
-
-```javascript
-map.on('pointermove', (evt) => {
-  if (evt.dragging) return;
-
-  const hit = map.hasFeatureAtPixel(evt.pixel);
-  map.getTargetElement().style.cursor = hit ? 'pointer' : '';
-});
-```
-
-### 8.2 Highlighting Features on Hover
-```javascript
-let currentHoveredFeature = null;
-
-const hoverHighlightStyle = new Style({
-  stroke: new Stroke({
-    color: '#00E5FF',
-    width: 4
-  })
-});
-
-map.on('pointermove', (evt) => {
-  if (evt.dragging) return;
-
-  // 1. Reset previous hovered feature
-  if (currentHoveredFeature) {
-    currentHoveredFeature.setStyle(null); // Reverts back to layer style
-    currentHoveredFeature = null;
-  }
-
-  // 2. Highlight new feature under cursor
-  map.forEachFeatureAtPixel(evt.pixel, (feature, layer) => {
-    if (layer === vectorLayer) {
-      currentHoveredFeature = feature;
-      feature.setStyle(hoverHighlightStyle); // Apply feature-level highlight
-      return true; // Stop iterating
-    }
-  });
-});
+map.addControl(new HomeControl());
 ```
 
 ---
 
-## 9. Feature Information / Popup
+### Reference Resources
 
-Popups display detailed attributes in an HTML card anchored to the feature's coordinate using `ol/Overlay`.
-
-```text
-User clicks feature
-        ↓
-Feature selected
-        ↓
-Read properties (feature.getProperties())
-        ↓
-Create popup content
-        ↓
-Display information at coordinate
-```
-
-### 9.1 Popup Setup (`main.js`)
-```javascript
-import Overlay from 'ol/Overlay.js';
-
-// 1. HTML DOM elements
-const container = document.getElementById('popup');
-const content = document.getElementById('popup-content');
-const closer = document.getElementById('popup-closer');
-
-// 2. Instantiate Overlay
-const popupOverlay = new Overlay({
-  element: container,
-  autoPan: { animation: { duration: 250 } }
-});
-map.addOverlay(popupOverlay);
-
-// 3. Close button
-closer.onclick = () => {
-  popupOverlay.setPosition(undefined);
-  closer.blur();
-  return false;
-};
-
-// 4. Click interaction to display popup
-map.on('singleclick', (evt) => {
-  const feature = map.forEachFeatureAtPixel(evt.pixel, (feat) => feat);
-
-  if (feature) {
-    const props = feature.getProperties();
-    content.innerHTML = `
-      <h4 style="margin: 0 0 6px 0;">${props.name || 'Feature'}</h4>
-      <p style="margin: 0; font-size: 13px; color: #555;"><strong>Type:</strong> ${props.type || 'N/A'}</p>
-    `;
-    popupOverlay.setPosition(evt.coordinate);
-  } else {
-    popupOverlay.setPosition(undefined);
-  }
-});
-```
+- **OpenLayers `Draw` Interaction API:** [https://openlayers.org/en/latest/apidoc/module-ol_interaction_Draw-Draw.html](https://openlayers.org/en/latest/apidoc/module-ol_interaction_Draw-Draw.html)
+- **OpenLayers `Modify` Interaction API:** [https://openlayers.org/en/latest/apidoc/module-ol_interaction_Modify-Modify.html](https://openlayers.org/en/latest/apidoc/module-ol_interaction_Modify-Modify.html)
+- **OpenLayers `DragAndDrop` API:** [https://openlayers.org/en/latest/apidoc/module-ol_interaction_DragAndDrop-DragAndDrop.html](https://openlayers.org/en/latest/apidoc/module-ol_interaction_DragAndDrop-DragAndDrop.html)
+- **OpenLayers `ScaleLine` API:** [https://openlayers.org/en/latest/apidoc/module-ol_control_ScaleLine-ScaleLine.html](https://openlayers.org/en/latest/apidoc/module-ol_control_ScaleLine-ScaleLine.html)
+- **OpenLayers `OverviewMap` API:** [https://openlayers.org/en/latest/apidoc/module-ol_control_OverviewMap-OverviewMap.html](https://openlayers.org/en/latest/apidoc/module-ol_control_OverviewMap-OverviewMap.html)
 
 ---
 
-## 10. Layer-Level vs. Feature-Level Styling
+### Practical Activity
 
-Understanding how style inheritance operates ensures optimal performance and modular code:
+#### Objective:
+Build an interactive GIS Digitizing & Map Navigation application:
+1. Provide an OpenStreetMap base layer with an editable vector digitizing layer.
+2. Build an on-screen toolbar to switch interaction modes:
+   - **Navigate:** Pan and zoom freely.
+   - **Draw Point:** Digitize point locations.
+   - **Draw LineString:** Digitize routes.
+   - **Draw Polygon:** Digitize land parcels.
+3. Add a **DragAndDrop** interaction that accepts local `.geojson` files (test with your converted Natural Earth files like `ne_10m_populated_places.geojson` or `ne_10m_roads.geojson`), renders them on the map, and zooms to their extent.
+4. Add controls: **ScaleLine** (metric bar), **FullScreen**, **ZoomSlider**, and live **MousePosition** coordinate readouts.
 
-```javascript
-// Layer-level styling
-vectorLayer.setStyle(...)
+---
+
+#### Complete Implementation (`index.html` & `main.js`):
+
+##### `index.html`
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenLayers Digitizing & Controls</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', system-ui, sans-serif;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      #toolbar {
+        background: #1e293b;
+        color: white;
+        padding: 10px 16px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        z-index: 10;
+      }
+      #toolbar button {
+        background: #334155;
+        border: 1px solid #475569;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: background 0.2s;
+      }
+      #toolbar button:hover, #toolbar button.active {
+        background: #0284c7;
+        border-color: #38bdf8;
+      }
+      #map {
+        flex: 1;
+        width: 100%;
+        position: relative;
+      }
+      #coordinates {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        background: rgba(15, 23, 42, 0.85);
+        color: #f8fafc;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-family: monospace;
+        z-index: 5;
+        pointer-events: none;
+      }
+      .reset-center-control {
+        top: 95px;
+        left: 0.5em;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="toolbar">
+      <span style="font-weight: 600; margin-right: 8px;">GIS Tools:</span>
+      <button id="btn-navigate" class="active">Navigate</button>
+      <button id="btn-draw-point">Draw Point</button>
+      <button id="btn-draw-line">Draw Line</button>
+      <button id="btn-draw-polygon">Draw Polygon</button>
+      <button id="btn-modify">Modify Shapes</button>
+      <button id="btn-clear" style="margin-left: auto; background: #dc2626;">Clear All</button>
+    </div>
+    <div id="map">
+      <div id="coordinates"></div>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
 ```
 
-versus:
-
-```javascript
-// Feature-level styling
-feature.setStyle(...)
-```
-
-| Scope | Invocation | Characteristics | Primary Use Cases |
-|---|---|---|---|
-| **Layer-Level** | `vectorLayer.setStyle(...)` | - Applied globally across all features<br>- Highest rendering efficiency<br>- Evaluated dynamically with style functions | Default layer symbology, thematic classification, zoom-dependent scales |
-| **Feature-Level** | `feature.setStyle(...)` | - Overrides the layer style for a specific feature instance<br>- Reverts when set to `null`: `feature.setStyle(null)` | Temporary hover highlights, active selection flags, custom pin icons |
-
----
-
-## 11. Styling Performance
-
-When rendering vector layers in production, keep these performance principles in mind:
-
-- **Reuse `Style` Objects:** Maintain a cached object dictionary (`styles[category]`) rather than constructing `new Style()` instances inside style functions.
-- **Avoid Creating Complex Styles Unnecessarily:** Every extra stroke, text shadow, and nested fill increases canvas draw call time.
-- **Don't Use Huge Numbers of Unique Icons:** Loading 200 distinct icon URLs triggers 200 separate asynchronous image downloads. Prefer SVG icons or standardized icon sheets.
-- **Avoid Excessive Labels:** Restrict label rendering to close zoom levels using the `resolution` argument or enable `declutter: true`.
-- **Be Careful with Thousands of Client-Side Features:** If your dataset exceeds 5,000 features, pure GeoJSON/WFS rendering can degrade browser frame rates.
-- **Use Server-Side / Vector Tiles for Very Large Datasets:** As covered in Module 2, switch to **Vector Tiles (MVT)** or server-side **WMS** for datasets with tens of thousands of geometries.
-
----
-
-### Reference resources
-
-- **OpenLayers Style API:** [https://openlayers.org/en/latest/apidoc/module-ol_style_Style-Style.html](https://openlayers.org/en/latest/apidoc/module-ol_style_Style-Style.html)
-- **OpenLayers Select Interaction:** [https://openlayers.org/en/latest/apidoc/module-ol_interaction_Select-Select.html](https://openlayers.org/en/latest/apidoc/module-ol_interaction_Select-Select.html)
-- **OpenLayers Overlay API:** [https://openlayers.org/en/latest/apidoc/module-ol_Overlay-Overlay.html](https://openlayers.org/en/latest/apidoc/module-ol_Overlay-Overlay.html)
-- **OpenLayers Vector Labels Example:** [https://openlayers.org/en/latest/examples/vector-labels.html](https://openlayers.org/en/latest/examples/vector-labels.html)
-
-### Practical activity
-
-**Your Task:**
-
-#### Step 1 — Dynamic Styling
-1. Take the vector layer (GeoJSON or WFS) and apply a dynamic style function based on the `type` attribute:
-   ```javascript
-   vectorLayer.setStyle((feature) => {
-     const type = feature.get('type');
-
-     return type === 'hospital'
-       ? hospitalStyle
-       : defaultStyle;
-   });
-   ```
-
-#### Step 2 — Labels
-2. Extend the style function to display the feature's `name` attribute using `new Text()`:
-   ```javascript
-   new Text({
-     text: feature.get('name'),
-     font: 'bold 12px sans-serif',
-     offsetY: -15
-   });
-   ```
-
-#### Step 3 — Select Interaction
-3. Add an OpenLayers `Select` interaction configured to trigger on click:
-   ```javascript
-   const select = new Select({
-     condition: click
-   });
-   map.addInteraction(select);
-
-   select.on('select', (event) => {
-     const feature = event.selected[0];
-
-     if (feature) {
-       console.log('Selected Properties:', feature.getProperties());
-     }
-   });
-   ```
-
-#### Step 4 — Bonus (Hover Effect)
-4. Add a hover interaction that changes the mouse cursor to `'pointer'` and applies a stroke highlight when the mouse moves over a feature.
-
----
-
-#### Example Implementation (`main.js`):
-
+##### `main.js`
 ```javascript
 import Map from 'ol/Map.js';
 import View from 'ol/View.js';
@@ -606,179 +553,147 @@ import TileLayer from 'ol/layer/Tile.js';
 import VectorLayer from 'ol/layer/Vector.js';
 import OSM from 'ol/source/OSM.js';
 import VectorSource from 'ol/source/Vector.js';
-import GeoJSON from 'ol/format/GeoJSON.js';
-import Overlay from 'ol/Overlay.js';
-import Select from 'ol/interaction/Select.js';
-import { click } from 'ol/events/condition.js';
-import { Style, Circle as CircleStyle, Fill, Stroke, Text } from 'ol/style.js';
 import { fromLonLat } from 'ol/proj.js';
+import { Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style.js';
+
+// Interactions
+import Draw from 'ol/interaction/Draw.js';
+import Modify from 'ol/interaction/Modify.js';
+import Snap from 'ol/interaction/Snap.js';
+import DragAndDrop from 'ol/interaction/DragAndDrop.js';
+import GeoJSON from 'ol/format/GeoJSON.js';
+import KML from 'ol/format/KML.js';
+import GPX from 'ol/format/GPX.js';
+
+// Controls
+import { defaults as defaultControls } from 'ol/control/defaults.js';
+import ScaleLine from 'ol/control/ScaleLine.js';
+import FullScreen from 'ol/control/FullScreen.js';
+import ZoomSlider from 'ol/control/ZoomSlider.js';
+import MousePosition from 'ol/control/MousePosition.js';
+import OverviewMap from 'ol/control/OverviewMap.js';
+import { createStringXY } from 'ol/coordinate.js';
+
 import 'ol/ol.css';
 
-// 1. Base Map Layer
+// 1. Vector source for digitizing
+const digitizeSource = new VectorSource();
+
+const digitizeLayer = new VectorLayer({
+  source: digitizeSource,
+  style: new Style({
+    fill: new Fill({ color: 'rgba(56, 189, 248, 0.3)' }),
+    stroke: new Stroke({ color: '#0284c7', width: 2.5 }),
+    image: new CircleStyle({
+      radius: 7,
+      fill: new Fill({ color: '#f59e0b' }),
+      stroke: new Stroke({ color: '#ffffff', width: 2 })
+    })
+  })
+});
+
+// 2. Base Tile Layer
 const baseLayer = new TileLayer({
   source: new OSM()
 });
 
-// 2. Pre-defined Reusable Styles
-const hospitalStyle = new Style({
-  image: new CircleStyle({
-    radius: 9,
-    fill: new Fill({ color: '#D32F2F' }),
-    stroke: new Stroke({ color: '#FFFFFF', width: 2 })
-  })
-});
-
-const schoolStyle = new Style({
-  image: new CircleStyle({
-    radius: 9,
-    fill: new Fill({ color: '#1976D2' }),
-    stroke: new Stroke({ color: '#FFFFFF', width: 2 })
-  })
-});
-
-const defaultStyle = new Style({
-  image: new CircleStyle({
-    radius: 6,
-    fill: new Fill({ color: '#757575' }),
-    stroke: new Stroke({ color: '#FFFFFF', width: 1.5 })
-  })
-});
-
-// 3. Dynamic Style Function with Attribute Labels
-const styleFunction = (feature, resolution) => {
-  const type = feature.get('type');
-  const base = type === 'hospital' ? hospitalStyle : (type === 'school' ? schoolStyle : defaultStyle);
-
-  // Show text labels only when zoomed in (resolution < 40 meters/pixel)
-  if (resolution < 40) {
-    return new Style({
-      image: base.getImage(),
-      text: new Text({
-        text: feature.get('name') || '',
-        font: 'bold 12px Inter, sans-serif',
-        fill: new Fill({ color: '#212121' }),
-        stroke: new Stroke({ color: '#FFFFFF', width: 3 }),
-        offsetY: -15
-      })
-    });
-  }
-
-  return base;
-};
-
-// 4. Vector Dataset
-const vectorSource = new VectorSource({
-  features: new GeoJSON().readFeatures({
-    type: 'FeatureCollection',
-    features: [
-      {
-        type: 'Feature',
-        properties: { name: 'City Hospital', type: 'hospital', beds: 250 },
-        geometry: { type: 'Point', coordinates: fromLonLat([73.8567, 18.5204]) }
-      },
-      {
-        type: 'Feature',
-        properties: { name: 'Central High School', type: 'school', students: 1200 },
-        geometry: { type: 'Point', coordinates: fromLonLat([73.865, 18.525]) }
-      },
-      {
-        type: 'Feature',
-        properties: { name: 'Public Library', type: 'other', visitors: 400 },
-        geometry: { type: 'Point', coordinates: fromLonLat([73.845, 18.515]) }
-      }
-    ]
-  })
-});
-
-const vectorLayer = new VectorLayer({
-  source: vectorSource,
-  style: styleFunction,
-  declutter: true
-});
-
-// 5. Popup Overlay Setup
-const popupContainer = document.getElementById('popup');
-const popupContent = document.getElementById('popup-content');
-const popupCloser = document.getElementById('popup-closer');
-
-const overlay = new Overlay({
-  element: popupContainer,
-  autoPan: { animation: { duration: 250 } }
-});
-
-if (popupCloser) {
-  popupCloser.onclick = () => {
-    overlay.setPosition(undefined);
-    popupCloser.blur();
-    return false;
-  };
-}
-
-// 6. Map Initialization
+// 3. Initialize Map with Enhanced Controls
 const map = new Map({
   target: 'map',
-  layers: [baseLayer, vectorLayer],
-  overlays: [overlay],
+  layers: [baseLayer, digitizeLayer],
   view: new View({
-    center: fromLonLat([73.8567, 18.5204]),
-    zoom: 14
-  })
-});
-
-// 7. Select Interaction
-const select = new Select({
-  condition: click,
-  style: new Style({
-    image: new CircleStyle({
-      radius: 12,
-      fill: new Fill({ color: '#FFD600' }),
-      stroke: new Stroke({ color: '#000000', width: 2 })
+    center: fromLonLat([73.8567, 18.5204]), // Pune, India
+    zoom: 13
+  }),
+  controls: defaultControls().extend([
+    new ScaleLine({ units: 'metric', bar: true, steps: 4, text: true }),
+    new FullScreen(),
+    new ZoomSlider(),
+    new OverviewMap({
+      layers: [new TileLayer({ source: new OSM() })],
+      collapsed: true
+    }),
+    new MousePosition({
+      coordinateFormat: createStringXY(4),
+      projection: 'EPSG:4326',
+      target: document.getElementById('coordinates')
     })
-  })
-});
-map.addInteraction(select);
-
-select.on('select', (event) => {
-  const feature = event.selected[0];
-
-  if (feature) {
-    const props = feature.getProperties();
-    popupContent.innerHTML = `
-      <h4 style="margin:0 0 6px 0; font-size:14px;">${props.name}</h4>
-      <p style="margin:0; font-size:12px; color:#555;"><strong>Category:</strong> ${props.type}</p>
-    `;
-    overlay.setPosition(feature.getGeometry().getCoordinates());
-  } else {
-    overlay.setPosition(undefined);
-  }
+  ])
 });
 
-// 8. Hover Effect (Cursor & Stroke Highlight)
-let hoveredFeature = null;
-const highlightStyle = new Style({
-  image: new CircleStyle({
-    radius: 11,
-    fill: new Fill({ color: '#00E5FF' }),
-    stroke: new Stroke({ color: '#FFFFFF', width: 3 })
-  })
+// 4. Interaction State Management
+let currentInteraction = null;
+
+const modifyInteraction = new Modify({ source: digitizeSource });
+const snapInteraction = new Snap({ source: digitizeSource });
+
+// Drag and drop interaction
+const dragAndDropInteraction = new DragAndDrop({
+  formatConstructors: [GeoJSON, KML, GPX]
 });
 
-map.on('pointermove', (evt) => {
-  if (evt.dragging) return;
-
-  if (hoveredFeature) {
-    hoveredFeature.setStyle(null);
-    hoveredFeature = null;
-  }
-
-  const hit = map.forEachFeatureAtPixel(evt.pixel, (feat, layer) => {
-    if (layer === vectorLayer && !select.getFeatures().getArray().includes(feat)) {
-      hoveredFeature = feat;
-      feat.setStyle(highlightStyle);
-      return true;
-    }
+dragAndDropInteraction.on('addfeatures', (event) => {
+  digitizeSource.addFeatures(event.features);
+  map.getView().fit(digitizeSource.getExtent(), {
+    padding: [40, 40, 40, 40],
+    duration: 800
   });
-
-  map.getTargetElement().style.cursor = hit ? 'pointer' : '';
 });
+
+map.addInteraction(dragAndDropInteraction);
+map.addInteraction(snapInteraction);
+
+function setMode(mode) {
+  // Remove active drawing or modifying interactions
+  if (currentInteraction) {
+    map.removeInteraction(currentInteraction);
+    currentInteraction = null;
+  }
+  map.removeInteraction(modifyInteraction);
+
+  // Update button active states
+  document.querySelectorAll('#toolbar button').forEach((btn) => btn.classList.remove('active'));
+
+  if (mode === 'Point' || mode === 'LineString' || mode === 'Polygon') {
+    currentInteraction = new Draw({
+      source: digitizeSource,
+      type: mode
+    });
+    map.addInteraction(currentInteraction);
+  } else if (mode === 'Modify') {
+    map.addInteraction(modifyInteraction);
+  }
+}
+
+// 5. Button Listeners
+document.getElementById('btn-navigate').onclick = function () {
+  setMode('Navigate');
+  this.classList.add('active');
+};
+
+document.getElementById('btn-draw-point').onclick = function () {
+  setMode('Point');
+  this.classList.add('active');
+};
+
+document.getElementById('btn-draw-line').onclick = function () {
+  setMode('LineString');
+  this.classList.add('active');
+};
+
+document.getElementById('btn-draw-polygon').onclick = function () {
+  setMode('Polygon');
+  this.classList.add('active');
+};
+
+document.getElementById('btn-modify').onclick = function () {
+  setMode('Modify');
+  this.classList.add('active');
+};
+
+document.getElementById('btn-clear').onclick = function () {
+  if (confirm('Clear all drawn shapes?')) {
+    digitizeSource.clear();
+  }
+};
 ```

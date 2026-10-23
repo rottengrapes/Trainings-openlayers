@@ -343,7 +343,7 @@
   <span class="md-ellipsis">
     
   
-    Module 3 - GeoServer & OpenLayers
+    Module 3 - GeoServer & PostGIS
   
 
     
@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    Module 4 - PostGIS & OpenLayers
+    Module 4 - Vector Styling & Interaction
   
 
     
@@ -399,7 +399,7 @@
   <span class="md-ellipsis">
     
   
-    Module 5 - Vector Styling & Interaction
+    Module 5 - Map Interactions & Controls
   
 
     
@@ -1832,19 +1832,19 @@
 <h3 id="52-cesium-static-assets-configuration">5.2 Cesium Static Assets Configuration</h3>
 <p>Cesium requires static assets (Workers, WebAssembly, third-party libraries, and imagery) available via HTTP. In modern bundlers (Vite, Webpack), define <code>CESIUM_BASE_URL</code> before initializing Cesium:</p>
 <div class="highlight"><pre><span></span><code><span class="c1">// Vite configuration or early in main.js:</span>
-<span class="nb">window</span><span class="p">.</span><span class="nx">CESIUM_BASE_URL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;/node_modules/cesium/Build/Cesium/&#39;</span><span class="p">;</span>
+<span class="nb">window</span><span class="p">.</span><span class="nx">CESIUM_BASE_URL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'/node_modules/cesium/Build/Cesium/'</span><span class="p">;</span>
 </code></pre></div>
 <h3 id="53-initializing-the-3d-globe">5.3 Initializing the 3D Globe</h3>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/Map.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/View.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Tile.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/OSM.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">OLCesium</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol-cesium&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="s1">&#39;ol/ol.css&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/Map.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/View.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Tile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/OSM.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">OLCesium</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol-cesium'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">'ol/ol.css'</span><span class="p">;</span>
 
 <span class="c1">// 1. Create standard OpenLayers 2D map</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">'map'</span><span class="p">,</span>
 <span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">TileLayer</span><span class="p">({</span>
 <span class="w">      </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">OSM</span><span class="p">()</span>
@@ -1882,7 +1882,7 @@
 </ul>
 <h3 id="62-flying-the-3d-camera-programmatically">6.2 Flying the 3D Camera Programmatically</h3>
 <p>You can access the native Cesium scene and camera directly from <code>ol-cesium</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">Cesium</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;cesium&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">Cesium</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'cesium'</span><span class="p">;</span>
 
 <span class="kd">const</span><span class="w"> </span><span class="nx">scene</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">ol3d</span><span class="p">.</span><span class="nx">getCesiumScene</span><span class="p">();</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">camera</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">scene</span><span class="p">.</span><span class="nx">camera</span><span class="p">;</span>
@@ -1908,7 +1908,7 @@
 </code></pre></div>
 <h3 id="71-enabling-global-3d-terrain">7.1 Enabling Global 3D Terrain</h3>
 <p>Cesium provides high-resolution worldwide digital elevation models:</p>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">Cesium</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;cesium&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">Cesium</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'cesium'</span><span class="p">;</span>
 
 <span class="kd">const</span><span class="w"> </span><span class="nx">scene</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">ol3d</span><span class="p">.</span><span class="nx">getCesiumScene</span><span class="p">();</span>
 
@@ -1920,7 +1920,7 @@
 <span class="w">      </span><span class="nx">requestVertexNormals</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="w">   </span><span class="c1">// Dynamic sun lighting &amp; mountain shadows</span>
 <span class="w">    </span><span class="p">});</span>
 <span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;Failed to load Cesium terrain:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">'Failed to load Cesium terrain:'</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="p">);</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 
@@ -1982,13 +1982,13 @@ Draped flat along mountain terrain          True vertical 3D geometry with heigh
 <li><strong>Heterogeneous Formats:</strong> Supports batched 3D models (<code>.b3dm</code>), instanced models (<code>.i3dm</code>), point clouds (<code>.pnts</code>), and glTF models.</li>
 </ul>
 <h3 id="102-adding-a-3d-tileset-to-the-cesium-scene">10.2 Adding a 3D Tileset to the Cesium Scene</h3>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">Cesium</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;cesium&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">Cesium</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'cesium'</span><span class="p">;</span>
 
 <span class="kd">const</span><span class="w"> </span><span class="nx">scene</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">ol3d</span><span class="p">.</span><span class="nx">getCesiumScene</span><span class="p">();</span>
 
 <span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">load3DBuildings</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">tileset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">Cesium</span><span class="p">.</span><span class="nx">Cesium3DTileset</span><span class="p">.</span><span class="nx">fromUrl</span><span class="p">(</span>
-<span class="w">    </span><span class="s1">&#39;https://assets.ion.cesium.com/12345/tileset.json&#39;</span>
+<span class="w">    </span><span class="s1">'https://assets.ion.cesium.com/12345/tileset.json'</span>
 <span class="w">  </span><span class="p">);</span>
 <span class="w">  </span><span class="nx">scene</span><span class="p">.</span><span class="nx">primitives</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">tileset</span><span class="p">);</span>
 <span class="p">}</span>
@@ -2055,16 +2055,16 @@ User Toggle ──┤
               └─── ol3d.setEnabled(true)  ───▶ 3D Cesium WebGL Globe
 </code></pre></div>
 <h3 id="121-building-the-toggle-workflow">12.1 Building the Toggle Workflow</h3>
-<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">toggleButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;toggle-3d&#39;</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">toggleButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">'toggle-3d'</span><span class="p">);</span>
 
-<span class="nx">toggleButton</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">&#39;click&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="nx">toggleButton</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">'click'</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">is3D</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">ol3d</span><span class="p">.</span><span class="nx">getEnabled</span><span class="p">();</span>
 
 <span class="w">  </span><span class="c1">// Toggle state</span>
 <span class="w">  </span><span class="nx">ol3d</span><span class="p">.</span><span class="nx">setEnabled</span><span class="p">(</span><span class="o">!</span><span class="nx">is3D</span><span class="p">);</span>
 
 <span class="w">  </span><span class="c1">// Update button label</span>
-<span class="w">  </span><span class="nx">toggleButton</span><span class="p">.</span><span class="nx">textContent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">is3D</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;Switch to 3D&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Switch to 2D&#39;</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">toggleButton</span><span class="p">.</span><span class="nx">textContent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">is3D</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">'Switch to 3D'</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">'Switch to 2D'</span><span class="p">;</span>
 <span class="p">});</span>
 </code></pre></div>
 <h3 id="122-viewpoint-continuity">12.2 Viewpoint Continuity</h3>
@@ -2126,18 +2126,18 @@ User Toggle ──┤
 <p>Program a "Fly to Landmark" button that triggers <code>scene.camera.flyTo()</code> with custom heading, pitch, and altitude over a mountain range or landmark city.</p>
 <hr />
 <h4 id="example-implementation-mainjs">Example Implementation (<code>main.js</code>):</h4>
-<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/Map.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/View.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Tile.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/layer/Vector.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/OSM.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">VectorSource</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/source/Vector.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">GeoJSON</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/format/GeoJSON.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Style</span><span class="p">,</span><span class="w"> </span><span class="nx">Circle</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">,</span><span class="w"> </span><span class="nx">Fill</span><span class="p">,</span><span class="w"> </span><span class="nx">Stroke</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/style.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol/proj.js&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="nx">OLCesium</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ol-cesium&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">Cesium</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;cesium&#39;</span><span class="p">;</span>
-<span class="k">import</span><span class="w"> </span><span class="s1">&#39;ol/ol.css&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nb">Map</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/Map.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">View</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/View.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">TileLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Tile.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/layer/Vector.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">OSM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/OSM.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">VectorSource</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/source/Vector.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">GeoJSON</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/format/GeoJSON.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Style</span><span class="p">,</span><span class="w"> </span><span class="nx">Circle</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">,</span><span class="w"> </span><span class="nx">Fill</span><span class="p">,</span><span class="w"> </span><span class="nx">Stroke</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/style.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol/proj.js'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">OLCesium</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'ol-cesium'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">Cesium</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'cesium'</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">'ol/ol.css'</span><span class="p">;</span>
 
 <span class="c1">// 1. Setup Base Layer</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">baseLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">TileLayer</span><span class="p">({</span>
@@ -2148,17 +2148,17 @@ User Toggle ──┤
 <span class="kd">const</span><span class="w"> </span><span class="nx">vectorLayer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorLayer</span><span class="p">({</span>
 <span class="w">  </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VectorSource</span><span class="p">({</span>
 <span class="w">    </span><span class="nx">features</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">GeoJSON</span><span class="p">().</span><span class="nx">readFeatures</span><span class="p">({</span>
-<span class="w">      </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;FeatureCollection&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">'FeatureCollection'</span><span class="p">,</span>
 <span class="w">      </span><span class="nx">features</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">        </span><span class="p">{</span>
-<span class="w">          </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Feature&#39;</span><span class="p">,</span>
-<span class="w">          </span><span class="nx">properties</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Mont Blanc Summit&#39;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">          </span><span class="nx">geometry</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Point&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">coordinates</span><span class="o">:</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">([</span><span class="mf">6.8644</span><span class="p">,</span><span class="w"> </span><span class="mf">45.8326</span><span class="p">])</span><span class="w"> </span><span class="p">}</span>
+<span class="w">          </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">'Feature'</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">properties</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">'Mont Blanc Summit'</span><span class="w"> </span><span class="p">},</span>
+<span class="w">          </span><span class="nx">geometry</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">'Point'</span><span class="p">,</span><span class="w"> </span><span class="nx">coordinates</span><span class="o">:</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">([</span><span class="mf">6.8644</span><span class="p">,</span><span class="w"> </span><span class="mf">45.8326</span><span class="p">])</span><span class="w"> </span><span class="p">}</span>
 <span class="w">        </span><span class="p">},</span>
 <span class="w">        </span><span class="p">{</span>
-<span class="w">          </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Feature&#39;</span><span class="p">,</span>
-<span class="w">          </span><span class="nx">properties</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Mount Everest Summit&#39;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">          </span><span class="nx">geometry</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Point&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">coordinates</span><span class="o">:</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">([</span><span class="mf">86.9250</span><span class="p">,</span><span class="w"> </span><span class="mf">27.9881</span><span class="p">])</span><span class="w"> </span><span class="p">}</span>
+<span class="w">          </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">'Feature'</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">properties</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">'Mount Everest Summit'</span><span class="w"> </span><span class="p">},</span>
+<span class="w">          </span><span class="nx">geometry</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">'Point'</span><span class="p">,</span><span class="w"> </span><span class="nx">coordinates</span><span class="o">:</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">([</span><span class="mf">86.9250</span><span class="p">,</span><span class="w"> </span><span class="mf">27.9881</span><span class="p">])</span><span class="w"> </span><span class="p">}</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">      </span><span class="p">]</span>
 <span class="w">    </span><span class="p">})</span>
@@ -2166,15 +2166,15 @@ User Toggle ──┤
 <span class="w">  </span><span class="nx">style</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Style</span><span class="p">({</span>
 <span class="w">    </span><span class="nx">image</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">CircleStyle</span><span class="p">({</span>
 <span class="w">      </span><span class="nx">radius</span><span class="o">:</span><span class="w"> </span><span class="mf">8</span><span class="p">,</span>
-<span class="w">      </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#E53935&#39;</span><span class="w"> </span><span class="p">}),</span>
-<span class="w">      </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#FFFFFF&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="p">})</span>
+<span class="w">      </span><span class="nx">fill</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Fill</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#E53935'</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">      </span><span class="nx">stroke</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stroke</span><span class="p">({</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">'#FFFFFF'</span><span class="p">,</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="w"> </span><span class="p">})</span>
 <span class="w">    </span><span class="p">})</span>
 <span class="w">  </span><span class="p">})</span>
 <span class="p">});</span>
 
 <span class="c1">// 3. Initialize OpenLayers 2D Map</span>
 <span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="p">({</span>
-<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">'map'</span><span class="p">,</span>
 <span class="w">  </span><span class="nx">layers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">baseLayer</span><span class="p">,</span><span class="w"> </span><span class="nx">vectorLayer</span><span class="p">],</span>
 <span class="w">  </span><span class="nx">view</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">View</span><span class="p">({</span>
 <span class="w">    </span><span class="nx">center</span><span class="o">:</span><span class="w"> </span><span class="nx">fromLonLat</span><span class="p">([</span><span class="mf">6.8644</span><span class="p">,</span><span class="w"> </span><span class="mf">45.8326</span><span class="p">]),</span><span class="w"> </span><span class="c1">// Centered near the Alps</span>
@@ -2188,14 +2188,14 @@ User Toggle ──┤
 <span class="p">});</span>
 
 <span class="c1">// 5. 2D / 3D Toggle Button Handler</span>
-<span class="kd">const</span><span class="w"> </span><span class="nx">toggleBtn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;toggle-btn&#39;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">toggleBtn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">'toggle-btn'</span><span class="p">);</span>
 <span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">toggleBtn</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nx">toggleBtn</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">&#39;click&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">toggleBtn</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">'click'</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">isCurrently3D</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">ol3d</span><span class="p">.</span><span class="nx">getEnabled</span><span class="p">();</span>
 
 <span class="w">    </span><span class="c1">// Toggle 3D mode</span>
 <span class="w">    </span><span class="nx">ol3d</span><span class="p">.</span><span class="nx">setEnabled</span><span class="p">(</span><span class="o">!</span><span class="nx">isCurrently3D</span><span class="p">);</span>
-<span class="w">    </span><span class="nx">toggleBtn</span><span class="p">.</span><span class="nx">textContent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">isCurrently3D</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;Switch to 3D&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Switch to 2D&#39;</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">toggleBtn</span><span class="p">.</span><span class="nx">textContent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">isCurrently3D</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">'Switch to 3D'</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">'Switch to 2D'</span><span class="p">;</span>
 
 <span class="w">    </span><span class="c1">// When enabling 3D for the first time, configure terrain and camera</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">isCurrently3D</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
@@ -2205,7 +2205,7 @@ User Toggle ──┤
 <span class="w">        </span><span class="c1">// Enable worldwide 3D elevation terrain</span>
 <span class="w">        </span><span class="nx">scene</span><span class="p">.</span><span class="nx">terrainProvider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">Cesium</span><span class="p">.</span><span class="nx">createWorldTerrainAsync</span><span class="p">();</span>
 <span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;World terrain could not be loaded; falling back to flat ellipsoid:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">'World terrain could not be loaded; falling back to flat ellipsoid:'</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="p">);</span>
 <span class="w">      </span><span class="p">}</span>
 
 <span class="w">      </span><span class="c1">// Fly camera to tilted 3D perspective</span>

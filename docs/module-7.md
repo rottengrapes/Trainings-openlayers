@@ -99,7 +99,7 @@ Vector MBTiles:  [ Raw Points, Lines, Polys ] ──▶ Styled Dynamically by Op
 
 ---
 
-## 4. How MBTiles Are Created
+## 4. How MBTiles Are Created & Hands-On CLI Commands
 
 Creating MBTiles involves slicing GIS datasets into a multi-zoom tile pyramid and compressing them into an SQLite database:
 
@@ -115,12 +115,100 @@ Raw Spatial Data (PostGIS / Shapefile / GeoTIFF)
 
 ### 4.1 Common Tile Generation Tools
 
-- **Tippecanoe (Mapbox / Felt):** The industry standard for creating vector MBTiles from GeoJSON. Automatically simplifies line vertices, drops minor features at low zoom levels, and balances tile density to prevent browser overdraw.
+- **Tippecanoe (Mapbox / Felt):** The industry standard CLI for creating vector MBTiles from GeoJSON. Automatically simplifies line vertices, drops minor features at low zoom levels, and balances tile density to prevent browser overdraw.
 - **GDAL (`gdal_translate` & `gdaladdo`):** Powerful command-line utility for converting georeferenced raster imagery (GeoTIFFs, ECW) into raster MBTiles.
 - **QGIS:** Features a built-in processing tool: **Generate XYZ tiles (MBTiles)**. Exports any configured QGIS map canvas into an MBTiles file.
 - **MapTiler Engine:** Commercial desktop application offering a graphical workflow for generating high-performance raster and vector tile packages.
 
-### 4.2 File Size & Zoom Considerations
+### 4.2 Commands to Generate Vector MBTiles (Tippecanoe)
+
+#### 1. Installation:
+```bash
+# macOS (via Homebrew)
+brew install tippecanoe
+
+# Ubuntu / Debian
+sudo apt-get install tippecanoe
+```
+
+#### 2. Basic Conversion from GeoJSON:
+Convert a single Natural Earth GeoJSON file into vector MBTiles with zoom levels 0 through 14:
+```bash
+tippecanoe -o roads.mbtiles -z 14 -Z 0 ne_10m_roads.geojson
+```
+
+#### 3. Production Multi-Layer Generation:
+Package multiple Natural Earth vector files (roads, populated places, and country boundaries) into a single `.mbtiles` archive with specific layer names and automated density optimization:
+```bash
+tippecanoe -o natural_earth_basemap.mbtiles \
+  --maximum-zoom=14 \
+  --minimum-zoom=2 \
+  --layer=roads:ne_10m_roads.geojson \
+  --layer=places:ne_10m_populated_places.geojson \
+  --layer=countries:ne_10m_admin_0_countries.geojson \
+  --drop-densest-as-needed \
+  --extend-zooms-if-still-dropping \
+  --force
+```
+
+#### Key Tippecanoe Flags Explained:
+- `-o <file.mbtiles>`: The output MBTiles filename.
+- `-z <max-zoom>` / `--maximum-zoom`: Highest zoom level generated (e.g., `14`).
+- `-Z <min-zoom>` / `--minimum-zoom`: Lowest zoom level generated (e.g., `2`).
+- `-l <name>:<file>` / `--layer`: Assigns a named vector layer identifier within each vector tile (`.pbf`).
+- `--drop-densest-as-needed`: Dynamically simplifies and omits excess features at low zoom levels to guarantee tiles remain under the standard 500 KB browser limit.
+- `--force`: Overwrites the output file if it already exists.
+
+---
+
+### 4.3 Commands to Generate Raster MBTiles (GDAL)
+
+For Natural Earth shaded relief, orthophotos, or digital elevation models (DEMs) stored as GeoTIFF files, use GDAL:
+
+#### 1. Convert Natural Earth GeoTIFF to Raster MBTiles:
+```bash
+# Convert Natural Earth Shaded Relief GeoTIFF to an MBTiles container
+gdal_translate -of MBTILES \
+  -co TILE_FORMAT=PNG \
+  -co ZOOM_LEVEL_STRATEGY=UPPER \
+  NE1_50M_SR_W.tif natural_earth_relief.mbtiles
+```
+
+#### 2. Generate Pyramid Zoom Levels (Overviews):
+A newly translated MBTiles file only contains the native resolution zoom level. Build lower zoom overviews using `gdaladdo`:
+```bash
+# Generate overview levels using bilinear interpolation
+gdaladdo -r bilinear natural_earth_relief.mbtiles 2 4 8 16 32 64
+```
+
+#### 3. Compressing Photographic Imagery with JPEG:
+When packaging large raster imagery where file size is critical, use JPEG compression:
+```bash
+gdal_translate -of MBTILES \
+  -co TILE_FORMAT=JPEG \
+  -co QUALITY=85 \
+  NE1_50M_SR_W.tif natural_earth_relief_jpeg.mbtiles
+
+gdaladdo -r average natural_earth_relief_jpeg.mbtiles 2 4 8 16 32
+```
+
+---
+
+### 4.4 Inspecting MBTiles Metadata via SQLite CLI
+
+Because `.mbtiles` is a standard SQLite database, you can inspect it directly using `sqlite3`:
+
+```bash
+# 1. View metadata table (format, bounds, zoom levels, layers)
+sqlite3 city_basemap.mbtiles "SELECT * FROM metadata;"
+
+# 2. Count total tiles per zoom level
+sqlite3 city_basemap.mbtiles "SELECT zoom_level, count(*) AS tile_count FROM tiles GROUP BY zoom_level;"
+```
+
+---
+
+### 4.5 File Size & Zoom Considerations
 Because every zoom level quadruples the number of tiles ($4^z$), export bounds and zoom levels must be selected deliberately:
 
 ```text
@@ -185,7 +273,7 @@ Designing a robust offline Web GIS requires coordinating storage, service worker
 
 ---
 
-## 7. PMTiles – Modern Tile Archives
+## 7. PMTiles – Modern Tile Archives & CLI Commands
 
 While MBTiles is the traditional standard, **PMTiles** is the modern cloud-native and serverless standard for web map tile distribution.
 
@@ -211,6 +299,110 @@ Single PMTiles File (Hosted on S3 / CDN / Static Server)
   ```
 - The storage server returns only the requested 32 KB tile.
 - **Works in Browsers:** Because browsers natively support HTTP Range Requests, OpenLayers can read directly from a remote PMTiles archive over the web without server-side rendering pipelines.
+
+---
+
+### 7.2 Commands to Generate PMTiles
+
+#### Installing the PMTiles CLI:
+```bash
+# macOS (Homebrew)
+brew install pmtiles
+
+# Or via npm globally
+npm install -g pmtiles
+```
+
+#### Method A: Convert an Existing MBTiles File to PMTiles
+If you already have an MBTiles SQLite file (vector or raster), convert it in seconds:
+```bash
+pmtiles convert natural_earth_basemap.mbtiles natural_earth_basemap.pmtiles
+```
+
+#### Method B: Generate PMTiles Directly from GeoJSON with Tippecanoe
+Modern releases of Tippecanoe can write directly to `.pmtiles` without an intermediate MBTiles file:
+```bash
+tippecanoe -o natural_earth.pmtiles \
+  --maximum-zoom=14 \
+  --minimum-zoom=2 \
+  --layer=roads:ne_10m_roads.geojson \
+  --layer=places:ne_10m_populated_places.geojson \
+  --layer=countries:ne_10m_admin_0_countries.geojson \
+  --drop-densest-as-needed \
+  --extend-zooms-if-still-dropping \
+  --force
+```
+
+---
+
+### 7.3 Inspecting & Verifying PMTiles
+
+Use the `pmtiles` CLI to inspect archive headers and verify data integrity:
+
+```bash
+# 1. View metadata header, bounds, zoom levels, and format
+pmtiles show city_map.pmtiles
+
+# 2. Cryptographically verify the integrity of all internal tile offsets
+pmtiles verify city_map.pmtiles
+```
+
+---
+
+### 7.4 Serving PMTiles Locally for Development
+
+The `pmtiles` CLI includes a zero-configuration local HTTP tile server with built-in CORS support:
+
+```bash
+# Serve the PMTiles archive locally on port 8080
+pmtiles serve city_map.pmtiles --cors=* --port=8080
+```
+Tiles are immediately available at standard XYZ endpoints:
+```text
+http://localhost:8080/city_map/{z}/{x}/{y}.pbf
+```
+
+---
+
+### 7.5 Consuming PMTiles Directly in OpenLayers
+
+OpenLayers can consume PMTiles directly using the official `pmtiles` npm package (`npm install pmtiles`) via custom tile loading functions:
+
+```javascript
+import VectorTileLayer from 'ol/layer/VectorTile.js';
+import VectorTileSource from 'ol/source/VectorTile.js';
+import MVT from 'ol/format/MVT.js';
+import * as pmtiles from 'pmtiles';
+
+// 1. Initialize PMTiles instance pointing to remote S3 or local URL
+const p = new pmtiles.PMTiles('https://r2.example.com/maps/city_map.pmtiles');
+
+// 2. Wrap PMTiles byte fetching inside an OpenLayers VectorTile source
+const pmtilesSource = new VectorTileSource({
+  format: new MVT(),
+  tileLoadFunction: (tile, url) => {
+    tile.setLoader((extent, resolution, projection) => {
+      const [z, x, y] = tile.getTileCoord();
+      p.getZxy(z, x, y).then((res) => {
+        if (res && res.data) {
+          const format = tile.getFormat();
+          const features = format.readFeatures(res.data, {
+            extent: extent,
+            featureProjection: projection
+          });
+          tile.setFeatures(features);
+        }
+      });
+    });
+  }
+});
+
+const pmtilesLayer = new VectorTileLayer({
+  source: pmtilesSource
+});
+
+map.addLayer(pmtilesLayer);
+```
 
 ---
 

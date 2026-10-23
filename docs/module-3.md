@@ -1,310 +1,329 @@
-# Module 3 - GeoServer & OpenLayers
+# Module 3 - GeoServer & PostGIS Enterprise Integration
 
-Welcome to Module 3! In this module, we transition from simply consuming static files to understanding **how GeoServer publishes, styles, and controls geospatial data**, and how OpenLayers interacts with it across enterprise Web GIS architectures.
+Welcome to Module 3! In this module, we transition from standalone static files to the industry-standard enterprise Web GIS architecture: **PostGIS** as the spatial database engine, **GeoServer** as the publishing and middleware server, and **OpenLayers** as the high-performance client mapping library.
+
+```mermaid
+flowchart LR
+    A[(PostGIS Database<br/>Spatial Storage & SQL)] -->|JDBC / GiST Index| B[GeoServer<br/>OGC Services: WMS / WFS / WMTS]
+    B -->|WMS: Rendered Map Images| C[OpenLayers ImageLayer]
+    B -->|WFS: Live GeoJSON Features| D[OpenLayers VectorLayer]
+    C --> E[Browser Viewport]
+    D --> E
+```
 
 ---
 
-## 1. Introduction to GeoServer
+## 1. The Enterprise Web GIS Architecture
 
-### 1.1 What is GeoServer?
-**GeoServer** is an open-source software server written in Java that allows users to share, process, and edit geospatial data. Developed to adhere strictly to Open Geospatial Consortium (OGC) standards, GeoServer is the industry standard for publishing maps and data from spatial databases to client mapping libraries like OpenLayers.
-
-Under the hood, GeoServer is built upon the **GeoTools** spatial library and runs inside a Java Servlet container (such as Apache Tomcat or Eclipse Jetty). It acts as an abstraction layer between enterprise storage and web clients.
-
-### 1.2 GeoServer in the Web GIS Architecture
-GeoServer sits in the middle tier between your raw spatial storage and client web applications:
+### 1.1 The 3-Tier Enterprise Pipeline
+In production spatial systems, data flows through three distinct operational tiers:
 
 ```text
                ENTERPRISE 3-TIER ARCHITECTURE
-Storage Tier:       PostGIS / Shapefiles / GeoPackage / GeoTIFF
-                                  ↓ (JDBC / File I/O)
-Middleware Tier:              GeoServer
-                    (GeoTools Engine, SLD Styler, WMS/WFS/WMTS)
-                                  ↓ (HTTP / OGC Web Services)
-Client Tier:                  OpenLayers
-                    (Canvas / WebGL Engine, Layer Management)
-                                  ↓
-Presentation Tier:         Web Browser Viewport
+Storage Tier:       PostgreSQL + PostGIS
+                    (Raw Coordinates, GiST Spatial Indexes, Spatial SQL)
+                                   ↓ (JDBC Connection Pool)
+Middleware Tier:    GeoServer
+                    (GeoTools Engine, SLD Cartography, OGC Services: WMS/WFS/WMTS)
+                                   ↓ (HTTP / HTTPS Standards)
+Client Tier:        OpenLayers
+                    (HTML5 Canvas/WebGL Engine, Layer & Interaction Management)
+                                   ↓
+Presentation Tier:  Web Browser Viewport
 ```
 
-### 1.3 The OpenLayers + GeoServer Workflow
+- **Storage & Processing Tier (PostGIS):** Stores millions of coordinate geometries, enforces topological rules, performs spatial joins, and filters records using R-Tree spatial indexes.
+- **Middleware & Service Tier (GeoServer):** Reads spatial tables, validates coordinate systems, calculates extents, styles data on the server via SLD, and exposes standardized OGC web service endpoints.
+- **Client Tier (OpenLayers):** Requests server-rendered map images (WMS) or raw vector geometries (WFS), handles smooth pan and zoom navigation, and provides interactive user tools.
 
-- **Storage Tier:** Spatial datasets reside in an enterprise relational database (PostGIS) or flat files (Shapefile, GeoPackage, GeoTIFF).
-- **Publishing Tier:** GeoServer connects to the data store, verifies coordinate reference systems, computes spatial bounding boxes, applies cartographic styling rules (SLD), and exposes standard OGC endpoints.
-- **Client Tier:** OpenLayers requests rendered map images (WMS) or raw vector features (WFS) dynamically as the user navigates.
+### 1.2 Client-Side vs. Server-Side Spatial Processing
+
+| Processing Location | Strengths | Best Used For |
+|---|---|---|
+| **Server-Side (PostGIS)** | • Queries millions of records in milliseconds<br>• Leverages GiST spatial indexes<br>• Executes complex spatial joins and heavy geoprocessing | • Spatial containment (`ST_Within`)<br>• Proximity buffer analysis (`ST_DWithin`)<br>• Large-scale spatial aggregation |
+| **Client-Side (OpenLayers)** | • Zero network latency once loaded<br>• Smooth 60 FPS animations and hover states<br>• Instant user selection and measurement | • Feature click popups & tooltips<br>• Highlighting geometries under the mouse<br>• Client-side dynamic styling and drawing |
+
+> **Key Architectural Rule:** Always filter, clip, and aggregate as close to the database as possible. Never download 500,000 features over the network into OpenLayers when the user only needs to view 50.
 
 ---
 
-## 2. GeoServer Data Hierarchy
+## 2. PostGIS: The Enterprise Spatial Database
 
-To manage datasets across large organizations, GeoServer organizes data into a strict four-level administrative hierarchy:
+### 2.1 PostgreSQL vs. PostGIS
+- **PostgreSQL:** An open-source Object-Relational Database Management System (ORDBMS) offering ACID transactions, sophisticated concurrency, and enterprise reliability.
+- **PostGIS:** The spatial database extension for PostgreSQL that adheres to the **OGC Simple Features for SQL (SFS)** specification, adding:
+  - Native spatial data types (`geometry`, `geography`, `raster`).
+  - Over 1,000 spatial functions for measurement, relationships, and processing.
+  - R-Tree spatial indexing via **GiST (Generalized Search Tree)**.
+  - Spatial reference system metadata (`spatial_ref_sys`).
+
+### 2.2 PostGIS Spatial Data Types: `geometry` vs. `geography`
 
 ```text
-Workspace (Logical container & XML namespace)
-   └── Store (Physical connection to database or directory)
+PostGIS Spatial Data Types
+ ├── geometry   → Planar / Cartesian (Euclidean math, any projection: EPSG:3857, UTM, etc.)
+ └── geography  → Geodetic / Spherical (Great Circle math, strictly WGS 84 EPSG:4326, meters)
+```
+
+| Feature | `geometry` | `geography` |
+|---|---|---|
+| **Coordinate Space** | Flat Cartesian plane | Curved sphere / ellipsoid |
+| **Supported Projections** | Any CRS (EPSG:4326, EPSG:3857, UTM, State Plane) | Strictly WGS 84 (`EPSG:4326`) |
+| **Measurement Units** | Matches CRS units (meters for 3857/UTM; degrees for 4326) | Always in **meters** automatically |
+| **Performance** | Extremely fast; full spatial function catalog | Slightly slower computation; focused function subset |
+| **Typical Use** | City/regional maps, CAD/engineering, Web GIS | Global flight paths, international maritime boundaries |
+
+### 2.3 Core OGC Geometry Types (WKT)
+PostGIS represents shapes using Well-Known Text (WKT):
+- **`POINT(73.8567 18.5204)`**: Single coordinate point.
+- **`LINESTRING(73.85 18.52, 73.86 18.53, 73.87 18.55)`**: Connected line segments.
+- **`POLYGON((73.85 18.52, 73.86 18.52, 73.86 18.53, 73.85 18.53, 73.85 18.52))`**: Closed polygon boundary.
+- **Multi-Geometries:** `MULTIPOINT`, `MULTILINESTRING`, `MULTIPOLYGON`, and heterogeneous `GEOMETRYCOLLECTION`.
+
+### 2.4 SRID and Coordinate Reference Systems
+An **SRID (Spatial Reference System Identifier)** identifies a coordinate reference system in the EPSG registry:
+- **`EPSG:4326` (WGS 84):** Unprojected geographic coordinates in angular degrees (Longitude: -180 to +180, Latitude: -90 to +90). Used by GPS and GeoJSON.
+- **`EPSG:3857` (Web Mercator):** Projected planar coordinates in meters. Used by Google Maps, OpenStreetMap, and OpenLayers default views.
+- **Projected Grids (e.g., UTM Zone 43N - `EPSG:32643`):** Conformal projections designed for meter-accurate distance and area measurements within a defined zone.
+
+```sql
+-- Convert WGS 84 degrees into Web Mercator planar meters:
+SELECT id, ST_Transform(geom, 3857) AS geom_3857
+FROM buildings;
+
+-- Set SRID metadata if missing (does NOT change coordinate values):
+SELECT ST_SetSRID(ST_Point(73.8567, 18.5204), 4326);
+```
+
+### 2.5 Essential PostGIS Spatial Functions
+
+| Function | Description | Return Type |
+|---|---|---|
+| `ST_Area(geom)` | Computes the area of a polygon in CRS units | `double precision` |
+| `ST_Length(geom)` | Computes line length in CRS units | `double precision` |
+| `ST_Centroid(geom)` | Computes the geometric center point | `geometry (Point)` |
+| `ST_Buffer(geom, radius)` | Creates a boundary buffer of `radius` units | `geometry (Polygon)` |
+| `ST_Intersects(geomA, geomB)` | Returns true if geometries share any space | `boolean` |
+| `ST_Within(geomA, geomB)` | Returns true if A is completely inside B | `boolean` |
+| `ST_Contains(geomA, geomB)` | Returns true if A completely encloses B | `boolean` |
+| `ST_DWithin(geomA, geomB, dist)`| Returns true if geometries are within `dist` units (Index-accelerated) | `boolean` |
+| `ST_Distance(geomA, geomB)` | Returns minimum 2D distance between geometries | `double precision` |
+
+### 2.6 Spatial Indexing with GiST (R-Trees)
+Spatial shapes have no natural 1D order. Finding which polygons intersect without an index requires comparing every single vertex against all records. PostGIS resolves this using **GiST (Generalized Search Tree)** indexes based on **R-Trees**, indexing the 2D **Bounding Box (Envelope)** of each geometry.
+
+```sql
+CREATE INDEX buildings_geom_idx ON buildings USING GIST (geom);
+```
+
+#### Two-Stage Query Processing
+When executing a spatial query like `ST_Intersects(buildings.geom, parcel.geom)`:
+1. **Stage 1 (Index Filter):** PostGIS uses the GiST index to compare bounding boxes (`&&`). This instantly eliminates 99.9% of geometries that do not touch.
+2. **Stage 2 (Exact Test):** PostGIS runs exact point-in-polygon vertex math only on the surviving candidate records.
+
+---
+
+## 3. GeoServer: Architecture & Publishing Data
+
+### 3.1 What is GeoServer?
+**GeoServer** is an open-source Java application that shares and edits geospatial data according to OGC standards. Built on top of the **GeoTools** spatial engine, GeoServer connects to spatial databases, renders map graphics, and publishes services.
+
+### 3.2 GeoServer Data Hierarchy
+GeoServer organizes spatial data into a four-level administrative structure:
+
+```text
+Workspace (Logical department container & XML namespace)
+   └── Store (Physical connection to PostGIS database or directory)
         └── Layer / FeatureType (Individual spatial table or file)
-             └── Style (SLD cartographic symbology)
+             └── Style (SLD cartographic symbology rules)
 ```
 
-### 2.1 The Components Explained:
+- **Workspace:** Groups related stores and layers together (e.g., `training`). Layer qualified names take the form `workspace:layer_name` (e.g., `training:roads`, `training:buildings`).
+- **Store:** Connection configuration to the data source (PostGIS database, Directory of Shapefiles, GeoPackage, or GeoTIFF).
+- **Layer / Resource:** The published dataset with verified CRS, bounding boxes, and assigned style.
+- **Layer Group:** A combined endpoint that packages multiple layers together in a single request.
 
-- **Workspace:** A logical container and XML namespace grouping related stores and layers together (e.g., `training`, `city_planning`). It prevents layer naming collisions across different departments or projects.
-- **Store:** The physical connection configuration to a data source (e.g., PostGIS database connection parameters, path to a directory of Shapefiles, or a GeoTIFF file).
-- **Resource / Layer:** An individual spatial table or file published from a store with a verified Coordinate Reference System, bounding box, and assigned style.
-- **Layer Group:** A combined service endpoint that packages multiple layers together in a fixed rendering order, allowing OpenLayers to request multiple thematic layers in a single HTTP request.
+### 3.3 Connecting PostGIS to GeoServer
+1. In PostgreSQL, ensure the extension is active:
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS postgis;
+   ```
+2. In GeoServer Admin: **Stores → Add new Store → PostGIS (Vector Data DataStore)**.
+3. Enter connection parameters: Host (`localhost`), Port (`5432`), Database (`gis_training`), Schema (`public`), Username, and Password.
+4. Save the store.
 
-### 2.2 Understanding Layer Qualified Names
-In GeoServer, layers are referenced using the format:
-```text
-workspace:layer_name
-```
-Examples:
-```text
-training:roads
-training:buildings
-training:parcels
-```
-
----
-
-## 3. Connecting Data Sources to GeoServer
-
-GeoServer supports diverse vector and raster data formats through specialized data store adapters:
+### 3.4 Publishing a Layer (The 8-Step Workflow)
 
 ```text
-Data Source → Store → Layer → OGC Service
-```
-
-### 3.1 Vector Data Sources
-
-- **PostGIS:** The enterprise standard. Connects to PostgreSQL spatial tables with live spatial querying, spatial indexing (`GiST`), multi-user editing, and ACID transaction safety.
-- **Directory of Shapefiles:** Connects to a folder containing `.shp`, `.shx`, `.dbf`, and `.prj` files. Great for rapid local testing.
-- **GeoPackage (GPKG):** A modern, single-file SQLite database containing multiple vector and raster layers according to OGC standards.
-- **GeoJSON:** Flat JSON files containing vector feature collections.
-
-### 3.2 Raster Data Sources
-
-- **GeoTIFF:** Single georeferenced raster file (satellite imagery, aerial orthophotos, elevation models).
-- **ImageMosaic:** Connects to a catalog of multiple adjacent raster tiles, merging them into a seamless continuous layer with spatial indexing and time-series dimensions.
-
----
-
-## 4. Publishing a Layer in GeoServer
-
-Publishing spatial data in GeoServer follows an 8-step workflow:
-
-```text
-1. Create Workspace → 2. Add Store → 3. Select Source → 4. Publish Layer
+1. Create Workspace → 2. Add Store → 3. Select Table → 4. Publish Layer
         ↓
 5. Verify CRS → 6. Calculate Bounding Boxes → 7. Configure Style → 8. Layer Preview
 ```
 
-### 4.1 Step-by-Step Publishing Workflow
+- **Verify CRS:** Ensure **Native CRS** is detected (e.g., `EPSG:4326`). If unknown, set **Declared CRS** and choose *Force Declared*.
+- **Compute Bounding Boxes:** Click **Compute from data** (Native Bounding Box) and **Compute from native bounds** (Lat/Lon Bounding Box). *If bounding boxes are missing or zero, OpenLayers will not display the layer.*
+- **Assign Style:** Select a default SLD style under the **Publishing** tab.
+- **Preview:** Verify the layer in GeoServer's **Layer Preview** list.
 
-- **Create Workspace:** Define a name (e.g., `training`) and a unique Namespace URI (e.g., `http://localhost/training`).
-- **Add Data Store:** Select your store type (PostGIS, Directory of Shapefiles, or GeoTIFF) and provide connection parameters.
-- **Select Data Source:** GeoServer reads the store and lists available tables or files. Click **Publish** next to the desired dataset.
-- **Configure Coordinate Reference Systems (CRS):**
-  - **Native CRS:** The coordinate system detected directly within the dataset header (e.g., `EPSG:4326` or `EPSG:32643`).
-  - **Declared CRS:** What GeoServer publishes to clients.
-  - **SRS Handling Policies:**
-    - *Force Declared:* Overrides the native CRS if it is missing or misidentified.
-    - *Reproject native to declared:* Uses GeoTools to reproject coordinates on ingest.
-- **Compute Bounding Boxes:**
-  - Click **Compute from data** to calculate the **Native Bounding Box**.
-  - Click **Compute from native bounds** to calculate the **Lat/Lon Bounding Box** in WGS 84 degrees.
-  - *If bounding boxes are missing or set to zero, OpenLayers will not be able to display the layer.*
-- **Assign Style:** In the **Publishing** tab, assign a Default Style (SLD).
-- **Save and Preview:** Click **Save**. Navigate to **Layer Preview** in the GeoServer sidebar and select **OpenLayers** to confirm rendering.
+### 3.5 GeoServer SQL Views
+GeoServer allows publishing raw PostGIS SQL queries as independent map layers.
+- **Static SQL View:** Pre-filters records or runs spatial operations on the database before GeoServer draws them (e.g. querying Natural Earth `populated_places`):
+  ```sql
+  SELECT id, name, adm0name, pop_max, ST_Buffer(geom, 0.5) AS geom
+  FROM populated_places
+  WHERE pop_max >= 1000000;
+  ```
+- **Parameterized SQL View:** Accepts dynamic arguments at runtime using `%param%` syntax:
+  ```sql
+  SELECT id, name, adm0name, pop_max, geom
+  FROM populated_places
+  WHERE pop_max >= %min_population%
+  ```
+  In OpenLayers, pass values via the WMS `VIEWPARAMS` property:
+  ```javascript
+  wmsSource.updateParams({ 'VIEWPARAMS': 'min_population:5000000' });
+  ```
 
 ---
 
-## 5. GetCapabilities & Service Metadata
+## 4. Service Metadata & GetCapabilities
 
-Before writing client-side code, inspect GeoServer's **`GetCapabilities`** XML document to determine valid layer names, supported projections, bounding boxes, and available image formats.
+Before writing client-side code, inspect GeoServer's **`GetCapabilities`** XML document:
 
-```text
-Client ──HTTP GET: REQUEST=GetCapabilities──▶ GeoServer ──Returns XML Document──▶ Client
-```
-
-### 5.1 Querying GetCapabilities
-Append `REQUEST=GetCapabilities` to your service URL:
 - **WMS:** `http://localhost:8080/geoserver/wms?service=WMS&version=1.3.0&request=GetCapabilities`
 - **WFS:** `http://localhost:8080/geoserver/wfs?service=WFS&version=2.0.0&request=GetCapabilities`
 
-### 5.2 Key Information to Inspect:
-
-- **Layer Names:** Look for `<Layer><Name>training:roads</Name></Layer>`. The string inside `<Name>` is the exact identifier required by OpenLayers.
-- **Supported CRS:** Verify that your target projection (e.g., `EPSG:3857`, `EPSG:4326`) is listed under `<CRS>`.
-- **Supported Formats:** Check `<Format>` tags for available image types (`image/png`, `image/jpeg`) or vector formats (`application/json`).
-- **Bounding Boxes:** `<EX_GeographicBoundingBox>` provides latitude/longitude limits used to set initial map view extents.
+### Key XML Elements to Inspect:
+- `<Layer><Name>training:roads</Name></Layer>`: The exact identifier needed for `LAYERS` in OpenLayers.
+- `<CRS>`: Supported projections (e.g., `EPSG:3857`, `EPSG:4326`).
+- `<Format>`: Supported image formats (`image/png`, `image/jpeg`) or vector formats (`application/json`).
+- `<EX_GeographicBoundingBox>`: Min/Max Longitude and Latitude limits.
 
 ---
 
-## 6. WMS with GeoServer
+## 5. Consuming GeoServer WMS in OpenLayers
 
-**WMS (Web Map Service)** renders map images on the server and streams them to OpenLayers as raster pictures.
+**WMS (Web Map Service)** renders map images on the server and returns raster pictures to OpenLayers.
 
-### 6.1 `ImageWMS` vs. `TileWMS`
+### 5.1 `ImageWMS` vs. `TileWMS`
+- **`ImageWMS` (Single Image):** Requests a single image covering the entire map canvas for the current extent. Prevents text labels from being chopped across tile borders.
+- **`TileWMS` (Tiled Images):** Requests a grid of 256×256 pixel tiles. Best for base maps and cached layers via GeoWebCache.
 
-- **`ImageWMS` (Single Image):** Requests a single image covering the whole map canvas for the current extent.
-  - *Best for:* Thematic maps and layers with dense text labels (prevents labels being chopped at tile boundaries).
-- **`TileWMS` (Tiled Images):** Requests WMS imagery in a grid of 256x256 pixel tiles.
-  - *Best for:* Base maps, high-traffic layers, and caching via GeoWebCache.
-
-### 6.2 Key WMS Request Parameters
+### 5.2 Key WMS Request Parameters
 
 | Parameter | Purpose | Example |
 |---|---|---|
-| `LAYERS` | Qualified name of the layer or layer group | `'training:roads'` |
-| `STYLES` | Named SLD style on GeoServer (empty uses default) | `''` |
-| `FORMAT` | Output image MIME format | `'image/png'` |
-| `TRANSPARENT`| Enables canvas transparency so lower layers show through | `true` |
-| `VERSION` | OGC WMS protocol version | `'1.3.0'` |
+| `LAYERS` | Qualified layer name on GeoServer | `'training:roads'` |
+| `STYLES` | Named SLD style on server (blank for default) | `''` |
+| `FORMAT` | Output MIME format | `'image/png'` |
+| `TRANSPARENT`| Allows underlying base maps to show through | `true` |
+| `VERSION` | OGC WMS version | `'1.3.0'` |
 
-### 6.3 OpenLayers WMS Implementation
+### 5.3 OpenLayers WMS Implementation
 
 ```javascript
 import ImageLayer from 'ol/layer/Image.js';
 import ImageWMS from 'ol/source/ImageWMS.js';
 
+const wmsSource = new ImageWMS({
+  url: 'http://localhost:8080/geoserver/wms',
+  params: {
+    'LAYERS': 'training:roads',
+    'TRANSPARENT': true,
+    'FORMAT': 'image/png'
+  },
+  serverType: 'geoserver' // Enables vendor optimizations
+});
+
 const wmsLayer = new ImageLayer({
-  source: new ImageWMS({
-    url: 'http://localhost:8080/geoserver/wms',
-    params: {
-      'LAYERS': 'training:roads',
-      'TRANSPARENT': true,
-      'FORMAT': 'image/png'
-    },
-    serverType: 'geoserver' // Enables optimized error handling and vendor parameters
-  })
+  source: wmsSource,
+  opacity: 0.85
 });
 
 map.addLayer(wmsLayer);
 ```
 
----
-
-## 7. GeoServer Styling – SLD
-
-**SLD (Styled Layer Descriptor)** is an OGC XML-based styling language that instructs GeoServer how to draw vector features into map images.
-
-### 7.1 Why Server-Side Styling?
-- **Consistency:** The exact same cartographic rules apply whether the layer is viewed in OpenLayers, QGIS, or an embedded dashboard.
-- **Zero Client Overhead:** The server handles all label placement, complex line dashes, and polygon hatching without consuming browser CPU.
-
-### 7.2 SLD Structure & Symbolizers
-
-An SLD document consists of:
-
-`NamedLayer` $\rightarrow$ `UserStyle` $\rightarrow$ `FeatureTypeStyle` $\rightarrow$ `Rule` $\rightarrow$ `Symbolizer`
-
-- `PointSymbolizer`: Circles, squares, SVG icons.
-- `LineSymbolizer`: Color, width, dash array.
-- `PolygonSymbolizer`: Fill color, opacity, stroke outline.
-- `TextSymbolizer`: Label field, font family, halo, placement.
-
-### 7.3 Classification Example
-Rules can filter features using attributes to create thematic maps:
-
-```text
-Roads
- ├── Rule 1: type = 'highway' → Red line (width: 4px)
- ├── Rule 2: type = 'primary' → Orange line (width: 3px)
- └── Rule 3: type = 'local'   → Gray line (width: 1px)
-```
-
-```xml
-<Rule>
-  <Name>Highways</Name>
-  <ogc:Filter>
-    <ogc:PropertyIsEqualTo>
-      <ogc:PropertyName>type</ogc:PropertyName>
-      <ogc:Literal>highway</ogc:Literal>
-    </ogc:PropertyIsEqualTo>
-  </ogc:Filter>
-  <LineSymbolizer>
-    <Stroke>
-      <CssParameter name="stroke">#D32F2F</CssParameter>
-      <CssParameter name="stroke-width">4</CssParameter>
-    </Stroke>
-  </LineSymbolizer>
-</Rule>
-```
-
----
-
-## 8. WMS Filtering with GeoServer (CQL)
-
-GeoServer supports **CQL (Common Query Language)** and **ECQL (Extended CQL)**, allowing OpenLayers to filter server-side data dynamically on the fly without modifying SLD files.
-
-```text
-OpenLayers → CQL_FILTER parameter → GeoServer → Filtered Map Image
-```
-
-### 8.1 Common CQL Filter Patterns
-
-| Filter Type | CQL Expression | Description |
-|---|---|---|
-| **String Comparison** | `type = 'highway'` | Exact string match |
-| **Numeric Comparison** | `lanes >= 4` | Greater than or equal |
-| **Range Filter** | `speed_limit BETWEEN 40 AND 80` | Value within range |
-| **Logical Combination**| `type = 'highway' AND lanes >= 4` | Multiple conditions |
-| **String Pattern** | `name LIKE 'Main%'` | Wildcard matching |
-| **Spatial Bounding** | `BBOX(geom, 73.8, 18.5, 73.9, 18.6)`| Features within bounding box |
-
-### 8.2 Applying CQL Filters Dynamically in OpenLayers
-Use `source.updateParams()` to apply or clear filters at runtime:
+### 5.4 Dynamic WMS Filtering with CQL
+GeoServer supports **CQL (Common Query Language)**, allowing OpenLayers to filter server-side data dynamically:
 
 ```javascript
-// 1. Apply a filter: show only highways
-wmsLayer.getSource().updateParams({
-  'CQL_FILTER': "type = 'highway'"
+// Apply filter: show only highways with 4 or more lanes
+wmsSource.updateParams({
+  'CQL_FILTER': "type = 'highway' AND lanes >= 4"
 });
 
-// 2. Clear the filter: show all features
-wmsLayer.getSource().updateParams({
+// Clear filter: show all features
+wmsSource.updateParams({
   'CQL_FILTER': null
 });
 ```
 
+### 5.5 WMS Feature Inspection (`GetFeatureInfo`)
+Because WMS layers are flat raster images, OpenLayers asks GeoServer what feature exists at a clicked coordinate via `getFeatureInfoUrl`:
+
+```javascript
+map.on('singleclick', (evt) => {
+  const viewResolution = map.getView().getResolution();
+  const url = wmsSource.getFeatureInfoUrl(
+    evt.coordinate,
+    viewResolution,
+    'EPSG:3857',
+    { 'INFO_FORMAT': 'application/json' }
+  );
+
+  if (url) {
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.features.length > 0) {
+          const props = data.features[0].properties;
+          alert(`Selected: ${props.name || 'Unnamed'}`);
+        }
+      });
+  }
+});
+```
+
 ---
 
-## 9. WFS – Working with Real Vector Features
+## 6. Consuming GeoServer WFS in OpenLayers
 
-While WMS returns a flattened raster image, **WFS (Web Feature Service)** returns the actual vector geometries and attributes (typically as GeoJSON).
+**WFS (Web Feature Service)** streams raw vector geometries and attributes (typically GeoJSON) into the browser.
 
 ```text
 GeoServer WFS → GeoJSON → ol/source/Vector → ol/layer/Vector → Browser Canvas
 ```
 
-### 9.1 WFS Request Structure
-A standard WFS `GetFeature` request URL:
-```text
-http://localhost:8080/geoserver/wfs?
-  service=WFS&
-  version=2.0.0&
-  request=GetFeature&
-  typeNames=training:buildings&
-  outputFormat=application/json
-```
-
-### 9.2 Loading GeoServer WFS in OpenLayers
+### 6.1 Loading WFS with Viewport Bounding Box Strategy
+Downloading thousands of features at once can freeze the browser. Use `ol/loadingstrategy.bbox` so OpenLayers only requests features within the current screen extent:
 
 ```javascript
 import VectorSource from 'ol/source/Vector.js';
 import VectorLayer from 'ol/layer/Vector.js';
 import GeoJSON from 'ol/format/GeoJSON.js';
-import { Style, Fill, Stroke } from 'ol/style.js';
+import { bbox as bboxStrategy } from 'ol/loadingstrategy.js';
+import { Style, Stroke, Fill } from 'ol/style.js';
+
+const wfsSource = new VectorSource({
+  format: new GeoJSON(),
+  strategy: bboxStrategy,
+  loader: function (extent, resolution, projection) {
+    const proj = projection.getCode();
+    const url = `http://localhost:8080/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeNames=training:buildings&outputFormat=application/json&srsname=${proj}&bbox=${extent.join(',')},${proj}`;
+
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        wfsSource.addFeatures(new GeoJSON().readFeatures(data));
+      });
+  }
+});
 
 const wfsLayer = new VectorLayer({
-  source: new VectorSource({
-    format: new GeoJSON(),
-    url: 'http://localhost:8080/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeNames=training:buildings&outputFormat=application/json'
-  }),
+  source: wfsSource,
   style: new Style({
-    fill: new Fill({ color: 'rgba(76, 175, 80, 0.4)' }),
-    stroke: new Stroke({ color: '#2E7D32', width: 2 })
+    stroke: new Stroke({ color: '#1565C0', width: 2 }),
+    fill: new Fill({ color: 'rgba(33, 150, 243, 0.3)' })
   })
 });
 
@@ -313,59 +332,11 @@ map.addLayer(wfsLayer);
 
 ---
 
-## 10. WFS Filtering & Feature Requests
-
-Downloading an entire layer containing 100,000 features over WFS will freeze the browser. GeoServer allows optimizing WFS requests using server-side constraints.
-
-### 10.1 Restricting Features with `CQL_FILTER` and Limits
-Append `cql_filter` and `count` (or `maxFeatures` in WFS 1.1) to your request URL:
-
-```text
-http://localhost:8080/geoserver/wfs?
-  service=WFS&
-  version=2.0.0&
-  request=GetFeature&
-  typeNames=training:buildings&
-  outputFormat=application/json&
-  cql_filter=status='commercial'&
-  count=500
-```
-
-### 10.2 Bounding Box Strategy (`bbox`)
-Instead of fetching all features upfront, configure OpenLayers to request only features within the user's current viewport extent using the `bbox` loading strategy:
-
-```javascript
-import VectorSource from 'ol/source/Vector.js';
-import GeoJSON from 'ol/format/GeoJSON.js';
-import { bbox as bboxStrategy } from 'ol/loadingstrategy.js';
-
-const dynamicWfsSource = new VectorSource({
-  format: new GeoJSON(),
-  strategy: bboxStrategy, // Triggers loader whenever the map extent changes
-  loader: function (extent, resolution, projection) {
-    const projCode = projection.getCode();
-    const url = `http://localhost:8080/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeNames=training:buildings&outputFormat=application/json&srsname=${projCode}&bbox=${extent.join(',')},${projCode}`;
-
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        dynamicWfsSource.addFeatures(
-          new GeoJSON().readFeatures(data)
-        );
-      });
-  }
-});
-```
-
----
-
-## 11. WMS vs. WFS — When to Use What?
-
-Use this decision table when choosing between WMS and WFS:
+## 7. WMS vs. WFS Decision Matrix
 
 | Requirement / Capability | WMS (Web Map Service) | WFS (Web Feature Service) |
 |---|:---:|:---:|
-| **Output Type** | Image picture (PNG, JPEG) | Raw vector geometry (GeoJSON, GML) |
+| **Output Type** | Image picture (PNG, JPEG) | Raw vector geometry (GeoJSON) |
 | **Browser Workload** | Very Low | Higher (processes coordinates & DOM paths) |
 | **Large Datasets (> 50,000 features)** | **Best Choice** | Unsuitable (high network & memory usage) |
 | **Interactive Feature Popups** | Via `GetFeatureInfo` server call | Instant client-side inspection |
@@ -373,146 +344,50 @@ Use this decision table when choosing between WMS and WFS:
 | **Feature Geometry Editing** | ❌ No | ✅ Yes (via WFS-T) |
 | **Network Payload Size** | Constant (size of one screen image) | Proportional to feature count |
 
-> **Architecture Question:** *Do I need to display visual map imagery (use WMS), or do I need to manipulate, style, or edit raw coordinates in the browser (use WFS)?*
-
 ---
 
-## 12. OpenLayers Feature Interaction with GeoServer
+## 8. Enterprise Performance & Diagnostic Workflow
 
-### 12.1 WMS Feature Info (`GetFeatureInfo`)
-Because WMS layers are flat raster images, OpenLayers cannot directly read vector properties from pixels. Instead, OpenLayers generates a `GetFeatureInfo` request asking GeoServer: *"What feature exists at this pixel coordinate?"*
+### 8.1 Performance Best Practices
+- **Index All Geometry Columns:** Always build GiST indexes on PostGIS tables (`CREATE INDEX ... USING GIST(geom)`).
+- **Filter Early:** Filter at the database tier using SQL Views or PostGIS `WHERE` clauses rather than sending raw data to the client.
+- **Use BBOX Loading:** Always use `loadingstrategy.bbox` with WFS vector sources.
+- **Run Maintenance:** Periodically run `VACUUM ANALYZE table_name;` in PostgreSQL so the query planner generates optimal spatial plans.
 
-```text
-User clicks map → GetFeatureInfo request → GeoServer → Returns JSON attributes → Display Popup
-```
-
-```javascript
-map.on('singleclick', (event) => {
-  const viewResolution = map.getView().getResolution();
-  const url = wmsSource.getFeatureInfoUrl(
-    event.coordinate,
-    viewResolution,
-    'EPSG:3857',
-    { 'INFO_FORMAT': 'application/json' }
-  );
-
-  if (url) {
-    fetch(url)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.features.length > 0) {
-          const feature = data.features[0];
-          console.log('Feature Attributes:', feature.properties);
-        }
-      });
-  }
-});
-```
-
-### 12.2 WFS Client-Side Interaction
-With WFS, features exist directly in the browser's memory, allowing instant attribute inspection:
-
-```javascript
-map.on('click', (event) => {
-  map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
-    if (layer === wfsLayer) {
-      console.log('Building Name:', feature.get('name'));
-    }
-  });
-});
-```
-
----
-
-## 13. Layer Groups & Multiple GeoServer Layers
-
-### 13.1 GeoServer Layer Groups
-A **Layer Group** is a container that packages multiple layers into a single named WMS service. Instead of sending five separate HTTP requests for roads, rivers, buildings, and parcels, OpenLayers requests one composite image:
-
-```text
-LAYERS: 'training:city_basemap' // Renders roads + buildings + parcels combined
-```
-
-### 13.2 Client-Side OpenLayers Layer Groups
-You can also organize multiple distinct layers on the client using `ol/layer/Group`:
-
-```javascript
-import LayerGroup from 'ol/layer/Group.js';
-
-const operationalLayers = new LayerGroup({
-  layers: [roadsLayer, buildingsLayer, parcelsLayer]
-});
-
-map.addLayer(operationalLayers);
-
-// Toggle entire group visibility at once
-// operationalLayers.setVisible(false);
-```
-
----
-
-## 14. Debugging GeoServer + OpenLayers
-
-When a layer fails to render, use the **GeoServer Layer Preview + Browser Network Tab** diagnostic workflow:
+### 8.2 Diagnostic Troubleshooting Workflow
 
 ```mermaid
 flowchart TD
     Issue[Layer Fails to Render] --> Step1[Check GeoServer Layer Preview]
-    Step1 -->|Fails in GeoServer| Fix1[Check Store, Native CRS, and SLD errors in GeoServer]
+    Step1 -->|Fails in GeoServer| Fix1[Check Store Connection, Native CRS, and Bounding Boxes]
     Step1 -->|Works in GeoServer| Step2[Inspect Browser Network Tab F12]
-    Step2 -->|HTTP 404| Fix2[Verify Service URL & workspace:layer name]
-    Step2 -->|HTTP 400| Fix3[Verify BBOX, CRS, and parameter spelling]
-    Step2 -->|CORS Error| Fix4[Enable CORS filter in GeoServer web.xml]
-    Step2 -->|HTTP 200 Blank Image| Fix5[Check Map View extent & CQL filter logic]
+    Step2 -->|HTTP 404| Fix2[Verify Service URL & workspace:layer name spelling]
+    Step2 -->|HTTP 400| Fix3[Check XML ServiceExceptionReport: BBOX or CRS syntax error]
+    Step2 -->|CORS Error| Fix4[Uncomment CORS filter in GeoServer web.xml and restart Tomcat]
+    Step2 -->|HTTP 200 Blank Image| Fix5[Check Map View Center/Extent & CQL_FILTER conditions]
 ```
 
-### Common HTTP Status Codes & Solutions:
-
-- **`404 Not Found`:** The GeoServer URL path or `LAYERS: 'workspace:layer'` is misspelled.
-- **`400 Bad Request`:** Invalid parameters. GeoServer returns an XML `ServiceExceptionReport` explaining the exact syntax error.
-- **`401 / 403 Forbidden`:** Workspace security rules are active. Check **Data Security** in GeoServer admin settings.
-- **`CORS Error`:** The browser blocked the response. Ensure GeoServer's `web.xml` has the CORS filter un-commented.
-- **Blank Image with Status 200:** Check if your map View is centered outside the layer's bounding box, or if a `CQL_FILTER` filtered out all features.
-
 ---
 
-### Reference resources
-
+### Reference Resources
+- **PostGIS Official Documentation:** [https://postgis.net/docs/](https://postgis.net/docs/)
 - **GeoServer User Manual:** [https://docs.geoserver.org/](https://docs.geoserver.org/)
-- **OGC WMS Standard:** [https://www.ogc.org/standards/wms](https://www.ogc.org/standards/wms)
-- **OGC WFS Standard:** [https://www.ogc.org/standards/wfs](https://www.ogc.org/standards/wfs)
 - **OpenLayers `ImageWMS` API:** [https://openlayers.org/en/latest/apidoc/module-ol_source_ImageWMS-ImageWMS.html](https://openlayers.org/en/latest/apidoc/module-ol_source_ImageWMS-ImageWMS.html)
-
-### Practical activity
-
-**Your Task:**
-
-#### Part 1 — GeoServer Configuration
-1. **Create Workspace:** In your GeoServer admin console, create a new workspace named `training`.
-2. **Connect Data Store:** Add a new Vector Data Store (PostGIS table or Directory of Shapefiles) pointing to your sample `roads` dataset.
-3. **Publish Layer:** Publish the `roads` layer, verify that the Native CRS is valid, compute the Bounding Boxes, and assign a default line style.
-4. **Verify Preview:** Open **Layer Preview** in the GeoServer sidebar and confirm that `training:roads` renders properly.
-
-#### Part 2 — OpenLayers WMS Integration
-5. **Setup Map Project:** Create an OpenLayers project with an OpenStreetMap base layer.
-6. **Add GeoServer WMS Layer:** Instantiate an `ImageLayer` using `ImageWMS` pointing to your local GeoServer endpoint (`http://localhost:8080/geoserver/wms`) with `LAYERS: 'training:roads'`.
-7. **Configure Transparency:** Set `TRANSPARENT: true` so the underlying OSM street map remains visible.
-
-#### Part 3 — Apply Dynamic CQL Filter
-8. **Filter WMS Layer:** Add a `CQL_FILTER` parameter to display only highway roads:
-   ```javascript
-   wmsLayer.getSource().updateParams({
-     'CQL_FILTER': "type = 'highway'"
-   });
-   ```
-9. **Analyze Network:** Open your browser's Developer Tools (`F12`), navigate to the **Network** tab, pan the map, and observe the `GetMap` request URL containing your updated `CQL_FILTER` parameter.
-
-#### Optional Bonus Challenge
-Add the same `roads` layer as a GeoJSON **WFS** layer (`VectorLayer` + `VectorSource`), apply a custom client-side stroke style, and add a click handler using `forEachFeatureAtPixel` to display road names in an alert or popup.
+- **OpenLayers `VectorSource` API:** [https://openlayers.org/en/latest/apidoc/module-ol_source_Vector-VectorSource.html](https://openlayers.org/en/latest/apidoc/module-ol_source_Vector-VectorSource.html)
 
 ---
 
-#### Example Implementation (`main.js`):
+### Practical Activity
+
+#### Objective
+Build an enterprise pipeline connecting PostGIS, GeoServer, and OpenLayers using the **Natural Earth Populated Places** dataset:
+1. Verify spatial data in PostGIS with spatial SQL (`SELECT name, pop_max FROM populated_places LIMIT 10;`).
+2. Publish the `populated_places` layer in GeoServer (workspace: `training`, calculate bounding boxes, point style).
+3. Display the layer in OpenLayers using `ImageWMS` over OpenStreetMap.
+4. Add dynamic CQL filtering via a UI button to filter Megacities (`pop_max >= 5000000`).
+5. Implement `GetFeatureInfo` on map click to display city attributes (Name, Country, Population) in an alert or popup.
+
+#### Complete Example Implementation (`main.js`):
 
 ```javascript
 import Map from 'ol/Map.js';
@@ -525,68 +400,74 @@ import { fromLonLat } from 'ol/proj.js';
 import 'ol/ol.css';
 
 // 1. Base Layer: OpenStreetMap
-const osmLayer = new TileLayer({
+const osmBase = new TileLayer({
   source: new OSM(),
   zIndex: 0
 });
 
-// 2. GeoServer WMS Layer: Published roads dataset
-const wmsSource = new ImageWMS({
+// 2. Enterprise GeoServer WMS Layer: Natural Earth Populated Places
+const postgisWmsSource = new ImageWMS({
   url: 'http://localhost:8080/geoserver/wms',
   params: {
-    'LAYERS': 'training:roads',
+    'LAYERS': 'training:populated_places',
     'TRANSPARENT': true,
     'FORMAT': 'image/png'
   },
   serverType: 'geoserver'
 });
 
-const roadsLayer = new ImageLayer({
-  source: wmsSource,
-  opacity: 0.8,
+const placesLayer = new ImageLayer({
+  source: postgisWmsSource,
+  opacity: 0.9,
   zIndex: 1
 });
 
-// 3. Initialize Map
+// 3. Initialize OpenLayers Map (Centered on global or regional view)
 const map = new Map({
   target: 'map',
-  layers: [osmLayer, roadsLayer],
+  layers: [osmBase, placesLayer],
   view: new View({
-    center: fromLonLat([73.85, 18.52]), // Adjust to your dataset coordinates
-    zoom: 12
+    center: fromLonLat([0, 20]),
+    zoom: 3
   })
 });
 
-// 4. Demonstration: Dynamic CQL Filtering
-const filterHighwaysButton = document.getElementById('filter-btn');
-if (filterHighwaysButton) {
-  filterHighwaysButton.addEventListener('click', () => {
-    wmsSource.updateParams({
-      'CQL_FILTER': "type = 'highway'"
+// 4. Dynamic CQL Filter: Show only Megacities (pop_max >= 5,000,000)
+const filterButton = document.getElementById('filter-megacities');
+if (filterButton) {
+  let isFiltered = false;
+  filterButton.addEventListener('click', () => {
+    isFiltered = !isFiltered;
+    postgisWmsSource.updateParams({
+      'CQL_FILTER': isFiltered ? 'pop_max >= 5000000' : null
     });
+    filterButton.textContent = isFiltered ? 'Show All Cities' : 'Show Megacities (5M+)';
   });
 }
 
-// 5. WMS GetFeatureInfo on Map Click
+// 5. Query Feature Attributes on Click (GetFeatureInfo)
 map.on('singleclick', (event) => {
   const viewResolution = map.getView().getResolution();
-  const url = wmsSource.getFeatureInfoUrl(
+  const infoUrl = postgisWmsSource.getFeatureInfoUrl(
     event.coordinate,
     viewResolution,
     'EPSG:3857',
     { 'INFO_FORMAT': 'application/json' }
   );
 
-  if (url) {
-    fetch(url)
+  if (infoUrl) {
+    fetch(infoUrl)
       .then((res) => res.json())
       .then((data) => {
         if (data.features && data.features.length > 0) {
           const props = data.features[0].properties;
-          alert(`Road: ${props.name || 'Unnamed'} (Type: ${props.type || 'N/A'})`);
+          const cityName = props.name || props.NAME || 'City';
+          const country = props.adm0name || props.ADM0NAME || 'N/A';
+          const population = props.pop_max ? Number(props.pop_max).toLocaleString() : 'N/A';
+          alert(`City: ${cityName}\nCountry: ${country}\nPopulation: ${population}`);
         }
       })
-      .catch((err) => console.error('GetFeatureInfo error:', err));
+      .catch((err) => console.error('GetFeatureInfo Error:', err));
   }
 });
 ```

@@ -9,9 +9,9 @@ nav:
   - Modules:
     - Module 1 - Fundamentals: module-1.md
     - Module 2 - GIS Data & Services: module-2.md
-    - Module 3 - GeoServer & OpenLayers: module-3.md
-    - Module 4 - PostGIS & OpenLayers: module-4.md
-    - Module 5 - Vector Styling & Interaction: module-5.md
+    - Module 3 - GeoServer & PostGIS: module-3.md
+    - Module 4 - Vector Styling & Interaction: module-4.md
+    - Module 5 - Map Interactions & Controls: module-5.md
     - Module 6 - CesiumJS Integration: module-6.md
     - Module 7 - MBTiles & Wrap-up: module-7.md
     - Module 8 - Integrated Exercise: module-8.md

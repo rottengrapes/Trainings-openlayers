@@ -1,457 +1,601 @@
-# Module 4 - PostGIS & OpenLayers
+# Module 4 - Vector Styling & Feature Interaction
 
-Welcome to Module 4! In this module, we examine the data engine behind enterprise Web GIS: **PostGIS**. You will learn how spatial data is modeled in relational databases, how spatial SQL operates under OGC standards, how spatial indexing accelerates spatial queries, how GeoServer exposes database queries, and how OpenLayers consumes the resulting services.
+Welcome to Module 4! In this module, we transition from merely loading raw vector coordinates to crafting expressive, responsive, and interactive Web GIS interfaces. We will follow the complete production engineering workflow:
+
+```text
+Feature Data & Geometry
+          ↓
+Dynamic Style Function (with Caching & Decluttering)
+          ↓
+Symbology, Halo Labels & Custom Icons
+          ↓
+Canvas Pointer Detection (Hover Highlight & Cursor State)
+          ↓
+Selection Interaction & Coordinate-Anchored Popups
+```
 
 ---
 
-## 1. PostGIS & Web GIS Architecture
+## 1. Introduction to Vector Styling
 
-### 1.1 PostgreSQL vs. PostGIS
+### 1.1 Why Vector Styling is Different from WMS Styling
+In Module 3, we explored server-side WMS styling via GeoServer SLD, where the server renders features into static pixels before sending them across the network. Vector styling in OpenLayers is fundamentally different:
 
-- **PostgreSQL:** An enterprise-grade, open-source Object-Relational Database Management System (ORDBMS) known for SQL standard compliance, ACID transactions, complex concurrency, and extensibility.
-- **PostGIS:** The spatial extender that transforms PostgreSQL into a full-featured spatial database. PostGIS follows the **OGC Simple Features for SQL (SFS)** specification, adding:
-  - Native spatial data types (`geometry`, `geography`, `raster`).
-  - Over 1,000 spatial functions for spatial measurement, topological relationships, computational geometry, and format conversions.
-  - R-Tree spatial indexing via the **GiST (Generalized Search Tree)** framework.
-  - Core spatial metadata views (`geometry_columns`, `geography_columns`, and `spatial_ref_sys`).
-
-### 1.2 The Enterprise Web GIS Data Pipeline
-In production architectures, data moves through four distinct operational tiers:
-
-```text
-PostGIS Database (Storage & Spatial SQL)
-              ↓ (JDBC Connection Pool)
-          GeoServer (Publishing & OGC Services)
-              ↓ (HTTP Web Services)
-      WMS / WFS Endpoints (Map Images & GeoJSON)
-              ↓
-         OpenLayers (Client Rendering & Interaction)
-              ↓
-        Browser Canvas (User Viewport)
-```
-
-- **Storage & Processing Tier (PostGIS):** Stores raw coordinate vectors, enforces topological constraints, runs complex spatial joins, and filters millions of rows with spatial indexes.
-- **Middleware & Service Tier (GeoServer):** Connects to PostGIS via connection pooling, translates spatial tables into standard OGC protocols (WMS, WFS, WMTS), and applies server-side symbology (SLD).
-- **Client Tier (OpenLayers):** Requests rendered map images (WMS) or vector geometries (WFS), managing zoom, pan, layer toggles, and user interactions.
-
-### 1.3 Client-Side vs. Server-Side Spatial Processing
-
-| Processing Location | Strengths | Best Used For |
+| Feature | Server-Side WMS Styling (GeoServer / SLD) | Client-Side Vector Styling (OpenLayers) |
 |---|---|---|
-| **Server-Side (PostGIS)** | - Handles millions of records effortlessly<br>- Leverages spatial indexes (GiST)<br>- Performs complex spatial joins and heavy geoprocessing | - Spatial containment (`ST_Within`)<br>- Proximity analysis (`ST_DWithin`)<br>- Large-scale buffering and aggregation |
-| **Client-Side (OpenLayers)** | - Instant user feedback (no network latency)<br>- Dynamic hover states, tooltips, and popups<br>- Interactive drawing and vector snapping | - Highlighting clicked features<br>- Measuring distances on screen<br>- Client-side styling and layer visibility |
+| **Rendering Engine** | Server CPU / GPU (GeoServer) | Browser HTML5 Canvas / WebGL |
+| **Output Type** | Pre-rendered raster image (PNG, JPEG) | Live DOM / Canvas vector paths |
+| **Interactivity** | Requires server roundtrips (`GetFeatureInfo`) | Instant client-side inspection, selection & hover |
+| **Styling Flexibility** | Static XML rules on the server | Full JavaScript logic (conditional, dynamic, animated) |
+| **Styling Speed** | Re-requests images on style changes | Updates instantly in browser memory |
+| **Data Payload** | Map image pixels | Raw coordinates and attributes (GeoJSON/WFS) |
 
-> **Key Architectural Rule:** Always filter, clip, and aggregate as close to the database as possible. Do not send 500,000 features over the network to OpenLayers when the user only needs to see 50.
+### 1.2 Client-Side Styling in OpenLayers
+
+In OpenLayers, vector layers use the `setStyle()` method to apply visual symbology. Styling can be assigned at two distinct scopes:
+
+- **`VectorLayer`**: `vectorLayer.setStyle(...)` sets the default appearance for all features on the layer.
+- **Individual `Feature`**: `feature.setStyle(...)` overrides the layer style for a specific feature instance (ideal for selection flags, hover highlights, or custom status indicators).
+
+### 1.3 Static vs. Dynamic Styling
+
+- **Static Styling:** A fixed `Style` object applied uniformly to every feature across all zoom levels.
+- **Dynamic Styling:** A JavaScript **Style Function** that inspects each feature's attributes (`feature.get('type')`) or the map's current zoom resolution to return tailored styles dynamically.
+
+### 1.4 Geometry Targets
+
+Styles apply across the three core vector geometry categories:
+
+- **Point / MultiPoint:** Styled with circular vector symbols (`Circle`) or external bitmap/SVG graphics (`Icon`).
+- **LineString / MultiLineString:** Styled with strokes (`Stroke`).
+- **Polygon / MultiPolygon:** Styled with interior fills (`Fill`) and outer boundary strokes (`Stroke`).
 
 ---
 
-## 2. PostGIS Spatial Data Types
+## 2. OpenLayers Style Components
 
-PostGIS adds two primary spatial data types to PostgreSQL: **`geometry`** and **`geography`**.
+OpenLayers builds symbology using specialized building blocks imported from `ol/style.js`:
 
 ```text
-PostGIS Spatial Data Types
- ├── geometry   → Planar / Cartesian (flat coordinate systems, project-specific, Euclidean math)
- └── geography  → Geodetic / Spherical (curved Earth, WGS 84 EPSG:4326, real-world meters)
+Point Feature
+ ├── image: Circle / Icon
+ └── text:  Text (Label)
+
+LineString Feature
+ ├── stroke: Stroke (Color, Width, Dash)
+ └── text:   Text (Label)
+
+Polygon Feature
+ ├── fill:   Fill (Color, Opacity)
+ ├── stroke: Stroke (Boundary)
+ └── text:   Text (Centroid Label)
 ```
 
-### 2.1 `geometry` vs. `geography`
+### 2.1 Core Style Classes
 
-| Feature | `geometry` | `geography` |
-|---|---|---|
-| **Coordinate Space** | Flat Cartesian plane (Euclidean) | Curved sphere / ellipsoid (Great Circle) |
-| **Supported Projections** | Any CRS (EPSG:4326, EPSG:3857, UTM, local grids) | Strictly WGS 84 (`EPSG:4326`) |
-| **Measurement Units** | Matches CRS units (meters for 3857/UTM; degrees for 4326) | Always in **meters** regardless of coordinates |
-| **Performance** | Extremely fast; full spatial function support | Slightly slower computation; subset of functions |
-| **Typical Use** | Regional/city mapping, engineering, standard Web GIS | Global flight routes, maritime tracks, global proximity |
+- **`Style`:** The root container that groups together fill, stroke, image, and text symbolizers.
+- **`Fill`:** Defines interior colors and transparencies for polygons, circles, and text backgrounds. Supports HEX, RGB, RGBA, and HSL strings.
+- **`Stroke`:** Defines boundary lines, road paths, and outlines with width, color, and dash patterns.
+- **`Circle` (`CircleStyle`):** Vector circular marker designed specifically for Point geometries.
+- **`Icon`:** External raster (PNG/JPEG) or vector (SVG) image symbol for Point geometries.
+- **`Text`:** Renders dynamic typographic labels anchored to feature geometries.
 
-### 2.2 Core OGC Geometry Types
+### 2.2 Core Style Properties Reference
 
-PostGIS represents spatial features using Open Geospatial Consortium (OGC) Well-Known Text (WKT) and Extended WKT (EWKT) definitions:
-
-- **Point:** A single coordinate location.
-  ```text
-  POINT(73.8567 18.5204)
-  ```
-- **LineString:** A continuous series of connected line segments.
-  ```text
-  LINESTRING(73.85 18.52, 73.86 18.53, 73.87 18.55)
-  ```
-- **Polygon:** A closed ring forming an outer boundary, with optional interior rings (holes).
-  ```text
-  POLYGON((73.85 18.52, 73.86 18.52, 73.86 18.53, 73.85 18.53, 73.85 18.52))
-  ```
-- **MultiPoint:** A collection of separate points treated as one database entity.
-- **MultiLineString:** A collection of disconnected line strings (e.g., a river system with separate tributaries).
-- **MultiPolygon:** Multiple independent polygons forming one entity (e.g., an island archipelago or an administrative zone with exclaves).
-- **GeometryCollection:** A heterogeneous mixture of points, lines, and polygons in a single row.
-
-### 2.3 Attributes + Geometry Structure
-In PostGIS, spatial tables are ordinary relational tables where one or more columns contain spatial geometries:
-
-```sql
-CREATE TABLE parcels (
-    id SERIAL PRIMARY KEY,
-    owner_name VARCHAR(100),
-    zone_code VARCHAR(20),
-    assessed_val NUMERIC,
-    geom GEOMETRY(MultiPolygon, 3857) -- Spatial column with type and SRID
-);
-```
+| Component | Property | Description | Example |
+|---|---|---|---|
+| **Fill** | Fill color | HEX, RGB, RGBA, or HSL color string | `color: 'rgba(33, 150, 243, 0.5)'` |
+| **Stroke** | Stroke color | Outline line color | `color: '#1565C0'` |
+| | Stroke width | Line thickness in pixels | `width: 2.5` |
+| | Line dash | Dash-gap array pattern | `lineDash: [6, 6]` (6px dash, 6px space) |
+| **Circle** | Point radius | Radius of circle marker in pixels | `radius: 8` |
+| **Icon** | Icon image | URL or path to image file | `src: '/icons/hospital.svg'` |
+| | Scale | Scaling factor | `scale: 0.8` |
+| | Anchor | Alignment point coordinates | `anchor: [0.5, 1]` (Bottom-center pin) |
+| | Rotation | Rotation angle in radians | `rotation: Math.PI / 4` |
+| **Text** | Text font | Font style, size, and family | `font: 'bold 13px Inter, sans-serif'` |
+| | Text color | Color of the text characters | `fill: new Fill({ color: '#212121' })` |
+| | Text offset | Pixel displacement (X, Y) | `offsetY: -15` (Places text above marker) |
 
 ---
 
-## 3. SRID & Coordinate Reference Systems
+## 3. Static Styling
 
-### 3.1 What is an SRID?
-An **SRID (Spatial Reference System Identifier)** is an integer identifier that points to a specific coordinate reference system defined in the standard EPSG registry (stored in the PostGIS `spatial_ref_sys` metadata table).
+When all features in a layer share identical cartography, apply a single reusable `Style` object to the `VectorLayer`.
 
-Common SRIDs encountered in Web GIS:
+### 3.1 Applying Styles to Points, Lines, and Polygons
 
-- **`EPSG:4326` (WGS 84):** Geographic coordinate system expressed in angular degrees (Longitude: -180 to +180, Latitude: -90 to +90). Used by GPS satellites and GeoJSON files.
-- **`EPSG:3857` (Web Mercator):** Projected coordinate system expressed in planar meters. Used by Google Maps, OpenStreetMap, and OpenLayers by default.
-- **Projected Local Grids (e.g., UTM Zones):** Conformal map projections (such as `EPSG:32643` for UTM Zone 43N) designed for meter-accurate distance and area measurements within a specific geographic zone.
-
-### 3.2 Why SRID Matters in PostGIS
-
-- **Spatial Queries Require Matching SRIDs:** PostGIS will reject queries that compare geometries with different SRIDs (e.g., intersecting an `EPSG:4326` layer with an `EPSG:3857` layer throws an error).
-- **Measurement Units Depend on SRID:**
-  - Running `ST_Area(geom)` on an `EPSG:4326` polygon calculates area in **square degrees** (unusable for real-world metrics).
-  - Running `ST_Area(geom)` on an `EPSG:3857` or UTM polygon calculates area in **square meters**.
-
-### 3.3 Checking the SRID of a Table
-```sql
-SELECT
-    id,
-    name,
-    ST_SRID(geom) AS srid
-FROM buildings
-LIMIT 5;
-```
-
-### 3.4 Coordinate Transformation (`ST_Transform`) vs. `ST_SetSRID`
-
-- **`ST_Transform(geom, target_srid)`:** Mathematically reprojects coordinates from the source CRS to the target CRS using Proj4 parameters.
-  ```sql
-  -- Convert WGS 84 longitude/latitude degrees into Web Mercator planar meters:
-  SELECT id, ST_Transform(geom, 3857) AS geom_3857
-  FROM buildings;
-  ```
-- **`ST_SetSRID(geom, srid)`:** Updates only the metadata tag on the geometry without altering the coordinate values (used when raw coordinates are in a known CRS but the SRID was set to 0 or missing).
-
----
-
-## 4. Basic Spatial SQL
-
-Spatial SQL introduces spatial functions prefixed with `ST_` (*Spatial Type*), adhering to OGC standards.
-
-### 4.1 From Standard SQL to Spatial SQL
-
-```sql
--- Standard Relational SQL
-SELECT name, category, floors
-FROM buildings
-WHERE floors > 5;
-
--- Spatial SQL: Add geometry columns and spatial predicates
-SELECT name, category, ST_Area(geom) AS footprint_area
-FROM buildings
-WHERE ST_Area(geom) > 1000;
-```
-
-### 4.2 Essential PostGIS Spatial Functions
-
-| Function | Description | Return Type |
-|---|---|---|
-| `ST_Area(geom)` | Computes the area of a polygon in CRS units | `double precision` |
-| `ST_Length(geom)` | Computes the length of a line string in CRS units | `double precision` |
-| `ST_Centroid(geom)` | Computes the mathematical geometric center point | `geometry (Point)` |
-| `ST_Buffer(geom, radius)` | Generates a polygon encompassing all points within `radius` | `geometry (Polygon)` |
-| `ST_Intersects(geomA, geomB)` | Returns true if two geometries physically share space | `boolean` |
-| `ST_Within(geomA, geomB)` | Returns true if geometry A is entirely inside geometry B | `boolean` |
-| `ST_Contains(geomA, geomB)` | Returns true if geometry A completely encloses geometry B | `boolean` |
-| `ST_DWithin(geomA, geomB, dist)`| Returns true if geometries are within `dist` distance of each other | `boolean` |
-| `ST_Distance(geomA, geomB)` | Returns the minimum 2D distance between two geometries | `double precision` |
-
----
-
-## 5. Spatial Queries
-
-Spatial queries allow you to answer real-world geographic questions using SQL relational joins and WHERE clauses.
-
-### 5.1 Practical GIS Queries
-
-#### Example 1: Find buildings within 100 meters of a major road (Proximity Query)
-```sql
-SELECT b.id, b.name, b.geom
-FROM buildings b
-JOIN roads r ON ST_DWithin(b.geom, r.geom, 100)
-WHERE r.name = 'Ring Road';
-```
-
-#### Example 2: Find features inside an administrative boundary (Containment Query)
-```sql
-SELECT b.id, b.name, b.geom
-FROM buildings b
-JOIN administrative_zones z ON ST_Within(b.geom, z.geom)
-WHERE z.zone_name = 'Downtown Commercial Zone';
-```
-
-#### Example 3: Find parcels intersecting a flood risk zone (Intersection Query)
-```sql
-SELECT p.id, p.owner_name, p.geom
-FROM parcels p
-JOIN flood_zones f ON ST_Intersects(p.geom, f.geom)
-WHERE f.risk_level = 'High';
-```
-
-### 5.2 Understanding Spatial Relationship Predicates
-
-```text
-ST_Intersects(A, B) : Any shared point between A and B (touches, crosses, overlaps)
-ST_Within(A, B)     : Geometry A is completely inside geometry B
-ST_Contains(A, B)   : Geometry A completely encloses geometry B (ST_Contains(A,B) = ST_Within(B,A))
-ST_DWithin(A, B, d) : Distance between A and B is <= d (Index-accelerated!)
-```
-
-> **Performance Tip:** Always prefer `ST_DWithin(geomA, geomB, 500)` over `ST_Distance(geomA, geomB) <= 500`. `ST_DWithin` leverages spatial indexes, while `ST_Distance` forces a slow full table scan.
-
----
-
-## 6. Geometry Creation & Processing
-
-### 6.1 Creating Geometries from Coordinates
-```sql
--- Create a point from Longitude and Latitude (WGS 84):
-SELECT ST_SetSRID(ST_Point(73.8567, 18.5204), 4326) AS point_geom;
-
--- Create geometry from Well-Known Text (WKT):
-SELECT ST_GeomFromText('LINESTRING(73.85 18.52, 73.86 18.53)', 4326) AS line_geom;
-```
-
-### 6.2 Buffers, Centroids, and Envelopes
-
-```sql
--- 1. Create a 50-meter buffer around utility pipelines:
-SELECT id, name, ST_Buffer(geom, 50) AS buffer_geom
-FROM pipelines;
-
--- 2. Calculate centroids for label placement on parcel polygons:
-SELECT id, owner_name, ST_Centroid(geom) AS label_point
-FROM parcels;
-
--- 3. Calculate the overall bounding box of an entire layer:
-SELECT ST_Extent(geom) AS layer_bounding_box
-FROM trees;
-```
-
----
-
-## 7. Spatial Indexes
-
-### 7.1 Why Do Spatial Queries Become Slow?
-In a standard relational table, sorting values (`WHERE id = 5000`) is simple because numbers have a 1-dimensional order. Geometries, however, are 2-dimensional (or 3-dimensional) shapes that can overlap, stretch, and twist. There is no natural total ordering of shapes in two-dimensional space.
-
-Without an index, finding all buildings intersecting a parcel requires comparing the vertices of every single building against the parcel—scanning millions of coordinates and causing immense CPU load.
-
-### 7.2 The GiST Index (Generalized Search Tree)
-PostGIS uses **GiST (Generalized Search Tree)** indexes based on **R-Trees**. An R-Tree indexes the **Bounding Box (Envelope)** of each geometry rather than the full shape:
-
-```sql
--- Create a spatial index on a geometry column:
-CREATE INDEX buildings_geom_idx
-ON buildings
-USING GIST (geom);
-```
-
-### 7.3 Two-Stage Spatial Query Processing
-
-When a spatial query executes against an indexed column, PostGIS performs a two-stage evaluation:
-
-```text
-Query: ST_Intersects(buildings.geom, parcel.geom)
-                     ↓
-Stage 1: Index Filter (Bounding Box Test: A.bbox && B.bbox)
-→ Quickly eliminates 99.9% of geometries whose boxes do not touch
-                     ↓
-Stage 2: Exact Geometry Test (Vertex Math)
-→ Evaluates detailed point-in-polygon math ONLY on surviving candidates
-                     ↓
-Precise Result Returned to Client
-```
-
----
-
-## 8. Connecting GeoServer to PostGIS
-
-Once spatial data is indexed in PostGIS, GeoServer connects to PostgreSQL through JDBC connection pooling to expose layers as web services.
-
-```text
-PostGIS Database (Tables & Views)
-              ↓ (JDBC Connection)
-    GeoServer Data Store
-              ↓ (Layer Publishing)
-       GeoServer Layers
-              ↓ (OGC WMS / WFS)
-      OpenLayers Client
-```
-
-### 8.1 Step-by-Step Connection Setup
-1. **Verify PostGIS Extension:** In PostgreSQL, ensure PostGIS is installed:
-   ```sql
-   CREATE EXTENSION IF NOT EXISTS postgis;
-   ```
-2. **Add Store in GeoServer:**
-   - In GeoServer Admin: **Stores → Add new Store → PostGIS (Vector Data DataStore)**.
-   - Enter connection settings:
-     - **Host:** `localhost` (or database host IP).
-     - **Port:** `5432`.
-     - **Database:** `gis_training`.
-     - **Schema:** `public`.
-     - **User / Password:** Database user credentials.
-3. **Publish Layer:**
-   - Navigate to **Layers → Add new layer** and select the PostGIS store.
-   - Click **Publish** next to the desired table (e.g., `trees`).
-4. **Configure CRS & Extents:**
-   - Verify **Native CRS** (e.g., `EPSG:4326`).
-   - Click **Compute from data** (Native Bounding Box) and **Compute from native bounds** (Lat/Lon Bounding Box).
-5. **Assign Style & Save:** Choose a suitable default SLD style and click **Save**.
-
----
-
-## 9. GeoServer SQL Views
-
-You are not restricted to publishing raw database tables. In GeoServer, an **SQL View** allows you to publish any valid PostGIS SQL query as an independent, dynamic map layer.
-
-### 9.1 Why Use SQL Views?
-
-- **Server-Side Filtering:** Filter features on the database tier before GeoServer draws them.
-- **Dynamic Calculated Columns:** Compute areas, lengths, or statistical categories on the fly.
-- **Spatial Joins:** Publish combined data from multiple tables without creating database materialized views.
-- **On-the-Fly Geometry Generation:** Expose centroids or buffers as new layers without duplicating storage.
-
-### 9.2 Creating a Static SQL View
-In GeoServer: **Layers → Add new layer → Configure new SQL view**:
-
-```sql
-SELECT
-    id,
-    species,
-    height_meters,
-    health_status,
-    ST_Buffer(geom, 25) AS geom
-FROM trees
-WHERE health_status = 'Critical';
-```
-
-GeoServer exposes this query as a standard layer (e.g., `training:critical_tree_buffers`) that OpenLayers consumes like any other WMS or WFS layer.
-
-### 9.3 Parameterized SQL Views
-SQL Views can accept dynamic parameters passed directly from OpenLayers at runtime using `%param%` syntax:
-
-```sql
-SELECT id, species, height_meters, geom
-FROM trees
-WHERE height_meters >= %min_height%
-```
-
-In OpenLayers, pass dynamic values via the WMS `VIEWPARAMS` property:
 ```javascript
-wmsSource.updateParams({
-  'VIEWPARAMS': 'min_height:20'
+import VectorLayer from 'ol/layer/Vector.js';
+import VectorSource from 'ol/source/Vector.js';
+import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style.js';
+
+// 1. Polygon Style (Fills and Outlines)
+const parcelStyle = new Style({
+  fill: new Fill({
+    color: 'rgba(76, 175, 80, 0.3)'
+  }),
+  stroke: new Stroke({
+    color: '#2E7D32',
+    width: 2
+  })
+});
+
+// 2. LineString Style (Roads / Rivers)
+const roadStyle = new Style({
+  stroke: new Stroke({
+    color: '#FF9800',
+    width: 3,
+    lineDash: [4, 4]
+  })
+});
+
+// 3. Point Style (Circular Marker)
+const pointStyle = new Style({
+  image: new CircleStyle({
+    radius: 7,
+    fill: new Fill({ color: '#E91E63' }),
+    stroke: new Stroke({ color: '#FFFFFF', width: 2 })
+  })
+});
+
+// Apply style to VectorLayer
+const vectorLayer = new VectorLayer({
+  source: new VectorSource({ /* ... */ }),
+  style: parcelStyle
+});
+```
+
+### 3.2 The Importance of Reusable Style Objects
+Always define style objects outside render loops:
+
+```javascript
+vectorLayer.setStyle(myStyle);
+```
+
+> **The Mechanics of Reusable Styles:** OpenLayers executes the styling pipeline every time a frame is rendered (during pan, zoom, or animations at 60 FPS). Reusing pre-instantiated style objects prevents allocating thousands of temporary JavaScript objects, avoiding browser garbage-collection pauses and stuttering animations.
+
+---
+
+## 4. Attribute-Based Dynamic Styling
+
+Real-world applications require thematic styling where feature appearance reflects underlying attributes.
+
+### 4.1 Reading Feature Attributes
+Feature attributes are accessed using `.get()`:
+```javascript
+const category = feature.get('type');
+const population = feature.get('population');
+```
+
+### 4.2 Dynamic Style Function
+Pass a function to `vectorLayer.setStyle()`. OpenLayers evaluates the function for each feature:
+
+```javascript
+const styleFunction = (feature) => {
+  const type = feature.get('type');
+
+  if (type === 'hospital') {
+    return hospitalStyle;
+  }
+
+  if (type === 'school') {
+    return schoolStyle;
+  }
+
+  return defaultStyle;
+};
+
+vectorLayer.setStyle(styleFunction);
+```
+
+### 4.3 Categorized Thematic Styling
+Pre-define reusable styles in a lookup table for maximum efficiency:
+
+```javascript
+const facilityStyles = {
+  hospital: new Style({
+    image: new CircleStyle({
+      radius: 8,
+      fill: new Fill({ color: '#D32F2F' }), // Red
+      stroke: new Stroke({ color: '#FFFFFF', width: 2 })
+    })
+  }),
+  school: new Style({
+    image: new CircleStyle({
+      radius: 8,
+      fill: new Fill({ color: '#1976D2' }), // Blue
+      stroke: new Stroke({ color: '#FFFFFF', width: 2 })
+    })
+  }),
+  default: new Style({
+    image: new CircleStyle({
+      radius: 6,
+      fill: new Fill({ color: '#757575' }), // Gray
+      stroke: new Stroke({ color: '#FFFFFF', width: 1.5 })
+    })
+  })
+};
+
+vectorLayer.setStyle((feature) => {
+  const category = feature.get('type');
+  return facilityStyles[category] || facilityStyles.default;
+});
+```
+
+### 4.4 Basic Graduated Styling (Numeric Ranges)
+Adjust visual properties (color, size) based on numeric attributes:
+
+```javascript
+function earthquakeStyle(feature) {
+  const mag = feature.get('magnitude');
+
+  let color = '#4CAF50'; // Low < 4.0
+  let radius = 5;
+
+  if (mag >= 6.0) {
+    color = '#D32F2F'; // Severe >= 6.0
+    radius = 12;
+  } else if (mag >= 4.0) {
+    color = '#FB8C00'; // Moderate 4.0 - 5.9
+    radius = 8;
+  }
+
+  return new Style({
+    image: new CircleStyle({
+      radius: radius,
+      fill: new Fill({ color: color }),
+      stroke: new Stroke({ color: '#FFFFFF', width: 1.5 })
+    })
+  });
+}
+```
+
+---
+
+## 5. Text Labels
+
+Labels display contextual information directly on the map.
+
+```javascript
+new Text({
+  text: feature.get('name'),
+  font: '14px sans-serif',
+  offsetY: -15
+});
+```
+
+### 5.1 Label Configuration
+
+- **`text`:** The string to display, typically retrieved from a feature attribute (`feature.get('name')`).
+- **`font`:** Standard CSS font string (e.g., `'bold 12px Inter, sans-serif'`).
+- **`fill`:** Font character color (`new Fill({ color: '#212121' })`).
+- **`stroke`:** Outer halo around letters (`new Stroke({ color: '#FFFFFF', width: 3 })`). Critical for legibility over satellite imagery and street maps.
+- **`backgroundFill` / `backgroundStroke`:** Optional background pill box behind the text.
+- **`offsetY` / `offsetX`:** Pixel displacement relative to the feature geometry center.
+
+### 5.2 Scale & Visibility Control
+Displaying thousands of labels when zoomed out causes visual clutter and slows rendering. Use the `resolution` argument in your style function to display labels only when zoomed in close:
+
+```javascript
+vectorLayer.setStyle((feature, resolution) => {
+  // Only show text labels when resolution is less than 30 meters/pixel (zoomed in)
+  const showLabel = resolution < 30;
+
+  return new Style({
+    image: pointMarker,
+    text: showLabel ? new Text({
+      text: feature.get('name') || '',
+      font: 'bold 12px sans-serif',
+      fill: new Fill({ color: '#111111' }),
+      stroke: new Stroke({ color: '#FFFFFF', width: 3 }),
+      offsetY: -15
+    }) : undefined
+  });
+});
+```
+
+### 5.3 Automated Label Decluttering
+OpenLayers features built-in collision detection to automatically hide overlapping labels and icons. Enable decluttering directly on the `VectorLayer`:
+
+```javascript
+const declutteredLayer = new VectorLayer({
+  source: vectorSource,
+  style: featureStyleFunction,
+  declutter: true // Automatically hides colliding text labels and icons
 });
 ```
 
 ---
 
-## 10. PostGIS → GeoServer → OpenLayers Pipeline
+## 6. Icons & Custom Symbols
 
-```mermaid
-flowchart LR
-    A[(PostGIS)] -->|Spatial SQL| B[GeoServer]
-    B -->|WMS: Rendered PNG| C[OpenLayers ImageLayer]
-    B -->|WFS: GeoJSON Features| D[OpenLayers VectorLayer]
+Vector points can be styled with custom bitmap (PNG) or vector (SVG) images using `ol/style/Icon`.
+
+```text
+Common Web GIS Use Cases:
+ Hospital → hospital icon
+ School   → school icon
+ Airport  → airport icon
 ```
 
-### 10.1 WMS vs. WFS in the PostGIS Pipeline
+### 6.1 Creating an Icon Style
+```javascript
+import { Style, Icon } from 'ol/style.js';
 
-- **WMS (Web Map Service):**
-  - PostGIS executes spatial index queries to select features in the requested viewport.
-  - GeoServer renders the resulting geometries into a raster image (PNG).
-  - OpenLayers renders the single image on the map canvas.
-  - *Best for:* Large datasets (10,000+ features) where raw geometries are not required in the browser.
+const hospitalIconStyle = new Style({
+  image: new Icon({
+    src: '/assets/icons/hospital.svg',
+    anchor: [0.5, 1],          // Bottom-center pin tip aligns with coordinate
+    anchorXUnits: 'fraction',
+    anchorYUnits: 'fraction',
+    scale: 0.8,                // Resizes icon
+    rotation: 0                // Rotation in radians
+  })
+});
+```
 
-- **WFS (Web Feature Service):**
-  - PostGIS queries spatial data and GeoServer serializes records into GeoJSON.
-  - OpenLayers parses the coordinates into client-side vector geometries.
-  - *Best for:* Datasets requiring client-side interactivity, hover highlights, or feature editing.
+### 6.2 Anchor Positioning
+
+The `anchor` property dictates which point of the icon image aligns with the feature's geographic coordinate:
+
+- **`[0.5, 0.5]` (Center):** Default. Best for circular badges, POI symbols, and airport markers.
+- **`[0.5, 1.0]` (Bottom-Center):** Standard for map pin markers so the needle tip points to the location.
+
+```text
+       ┌──────────┐
+       │  HOSPITAL│
+       └────┬─────┘
+            ▼  ← Anchor [0.5, 1.0] aligns with geographic coordinate
+```
 
 ---
 
-## 11. Performance Considerations
+## 7. Feature Selection
 
-When integrating PostGIS with Web GIS clients, keep these enterprise best practices in mind:
+OpenLayers provides the **`Select` interaction** (`ol/interaction/Select`) to capture user clicks, manage selection state, and highlight active features.
 
-- **Always Index Geometry Columns:** Every spatial table queried by GeoServer must have a GiST index on its geometry column (`CREATE INDEX ... USING GIST(geom)`).
-- **Filter at the Database Level:** Never transfer all database rows to GeoServer or OpenLayers. Filter using SQL Views, PostGIS `WHERE` conditions, or GeoServer `CQL_FILTER`.
-- **Use Viewport Bounding Box Strategies:** When using WFS, always use `ol/loadingstrategy.bbox` so OpenLayers only requests features inside the current view extent.
-- **Run Regular Database Maintenance:** Execute `VACUUM ANALYZE table_name;` periodically so PostgreSQL's query planner maintains accurate distribution statistics for optimal spatial query plans.
-- **Select Appropriate Precision:** At low zoom levels covering whole countries or continents, use `ST_Simplify(geom, tolerance)` or generalized tables to avoid sending millions of unneeded vertices across the network.
+```javascript
+import Select from 'ol/interaction/Select.js';
+import { click } from 'ol/events/condition.js';
+import { Style, Fill, Stroke } from 'ol/style.js';
+
+// 1. Configure the selection interaction
+const select = new Select({
+  condition: click, // Trigger on mouse click
+  style: new Style({
+    fill: new Fill({ color: 'rgba(255, 235, 59, 0.5)' }),
+    stroke: new Stroke({ color: '#F57F17', width: 3.5 })
+  })
+});
+
+map.addInteraction(select);
+
+// 2. Listen to the select event
+select.on('select', (event) => {
+  const feature = event.selected[0];
+
+  if (feature) {
+    console.log('Selected feature properties:', feature.getProperties());
+  }
+});
+```
+
+### 7.1 Selection Features
+
+- **Selection Condition:** `condition: click` triggers on single clicks; `pointerMove` triggers on hover.
+- **Deselection:** Clicking anywhere on the empty map canvas automatically deselects features.
+- **Selected Array:** `event.selected` contains features just selected; `event.deselected` contains features whose selection was cleared.
+
+---
+
+## 8. Hover Interaction
+
+Hover effects provide instant visual feedback as the user navigates across the map canvas.
+
+```text
+Mouse moves (pointermove)
+     ↓
+Feature detected?
+     ↓
+    Yes
+     ↓
+Apply highlight style & change cursor to pointer
+```
+
+### 8.1 Changing the Mouse Cursor
+Inform the user when an element is interactive by updating CSS cursor styling on `pointermove`:
+
+```javascript
+map.on('pointermove', (evt) => {
+  if (evt.dragging) return;
+
+  const hit = map.hasFeatureAtPixel(evt.pixel);
+  map.getTargetElement().style.cursor = hit ? 'pointer' : '';
+});
+```
+
+### 8.2 Highlighting Features on Hover
+```javascript
+let currentHoveredFeature = null;
+
+const hoverHighlightStyle = new Style({
+  stroke: new Stroke({
+    color: '#00E5FF',
+    width: 4
+  })
+});
+
+map.on('pointermove', (evt) => {
+  if (evt.dragging) return;
+
+  // 1. Reset previous hovered feature
+  if (currentHoveredFeature) {
+    currentHoveredFeature.setStyle(null); // Reverts back to layer style
+    currentHoveredFeature = null;
+  }
+
+  // 2. Highlight new feature under cursor
+  map.forEachFeatureAtPixel(evt.pixel, (feature, layer) => {
+    if (layer === vectorLayer) {
+      currentHoveredFeature = feature;
+      feature.setStyle(hoverHighlightStyle); // Apply feature-level highlight
+      return true; // Stop iterating
+    }
+  });
+});
+```
+
+---
+
+## 9. Feature Information / Popup
+
+Popups display detailed attributes in an HTML card anchored to the feature's coordinate using `ol/Overlay`.
+
+```text
+User clicks feature
+        ↓
+Feature selected
+        ↓
+Read properties (feature.getProperties())
+        ↓
+Create popup content
+        ↓
+Display information at coordinate
+```
+
+### 9.1 Popup Setup (`main.js`)
+```javascript
+import Overlay from 'ol/Overlay.js';
+
+// 1. HTML DOM elements
+const container = document.getElementById('popup');
+const content = document.getElementById('popup-content');
+const closer = document.getElementById('popup-closer');
+
+// 2. Instantiate Overlay
+const popupOverlay = new Overlay({
+  element: container,
+  autoPan: { animation: { duration: 250 } }
+});
+map.addOverlay(popupOverlay);
+
+// 3. Close button
+closer.onclick = () => {
+  popupOverlay.setPosition(undefined);
+  closer.blur();
+  return false;
+};
+
+// 4. Click interaction to display popup
+map.on('singleclick', (evt) => {
+  const feature = map.forEachFeatureAtPixel(evt.pixel, (feat) => feat);
+
+  if (feature) {
+    const props = feature.getProperties();
+    content.innerHTML = `
+      <h4 style="margin: 0 0 6px 0;">${props.name || 'Feature'}</h4>
+      <p style="margin: 0; font-size: 13px; color: #555;"><strong>Type:</strong> ${props.type || 'N/A'}</p>
+    `;
+    popupOverlay.setPosition(evt.coordinate);
+  } else {
+    popupOverlay.setPosition(undefined);
+  }
+});
+```
+
+---
+
+## 10. Layer-Level vs. Feature-Level Styling
+
+Understanding how style inheritance operates ensures optimal performance and modular code:
+
+```javascript
+// Layer-level styling
+vectorLayer.setStyle(...)
+```
+
+versus:
+
+```javascript
+// Feature-level styling
+feature.setStyle(...)
+```
+
+| Scope | Invocation | Characteristics | Primary Use Cases |
+|---|---|---|---|
+| **Layer-Level** | `vectorLayer.setStyle(...)` | • Applied globally across all features<br>• Highest rendering efficiency<br>• Evaluated dynamically with style functions | Default layer symbology, thematic classification, zoom-dependent scales |
+| **Feature-Level** | `feature.setStyle(...)` | • Overrides the layer style for a specific feature instance<br>• Reverts when set to `null`: `feature.setStyle(null)` | Temporary hover highlights, active selection flags, custom pin icons |
+
+---
+
+## 11. Styling Performance
+
+When rendering vector layers in production, keep these performance principles in mind:
+
+- **Reuse `Style` Objects:** Maintain a cached object dictionary (`styles[category]`) rather than constructing `new Style()` instances inside style functions.
+- **Avoid Creating Complex Styles Unnecessarily:** Every extra stroke, text shadow, and nested fill increases canvas draw call time.
+- **Don't Use Huge Numbers of Unique Icons:** Loading 200 distinct icon URLs triggers 200 separate asynchronous image downloads. Prefer SVG icons or standardized icon sheets.
+- **Avoid Excessive Labels:** Restrict label rendering to close zoom levels using the `resolution` argument or enable `declutter: true`.
+- **Be Careful with Thousands of Client-Side Features:** If your dataset exceeds 5,000 features, pure GeoJSON/WFS rendering can degrade browser frame rates.
+- **Use Server-Side / Vector Tiles for Very Large Datasets:** As covered in Module 2, switch to **Vector Tiles (MVT)** or server-side **WMS** for datasets with tens of thousands of geometries.
 
 ---
 
 ### Reference resources
 
-- **PostGIS Official Documentation:** [https://postgis.net/docs/](https://postgis.net/docs/)
-- **PostgreSQL User Manual:** [https://www.postgresql.org/docs/](https://www.postgresql.org/docs/)
-- **GeoServer SQL Views Manual:** [https://docs.geoserver.org/latest/en/user/data/database/sqlview.html](https://docs.geoserver.org/latest/en/user/data/database/sqlview.html)
-- **Introduction to PostGIS (Crunchy Data):** [https://postgis.net/workshops/postgis-intro/](https://postgis.net/workshops/postgis-intro/)
-- **OpenLayers `ImageWMS` Documentation:** [https://openlayers.org/en/latest/apidoc/module-ol_source_ImageWMS-ImageWMS.html](https://openlayers.org/en/latest/apidoc/module-ol_source_ImageWMS-ImageWMS.html)
+- **OpenLayers Style API:** [https://openlayers.org/en/latest/apidoc/module-ol_style_Style-Style.html](https://openlayers.org/en/latest/apidoc/module-ol_style_Style-Style.html)
+- **OpenLayers Select Interaction:** [https://openlayers.org/en/latest/apidoc/module-ol_interaction_Select-Select.html](https://openlayers.org/en/latest/apidoc/module-ol_interaction_Select-Select.html)
+- **OpenLayers Overlay API:** [https://openlayers.org/en/latest/apidoc/module-ol_Overlay-Overlay.html](https://openlayers.org/en/latest/apidoc/module-ol_Overlay-Overlay.html)
+- **OpenLayers Vector Labels Example:** [https://openlayers.org/en/latest/examples/vector-labels.html](https://openlayers.org/en/latest/examples/vector-labels.html)
+
+---
 
 ### Practical activity
 
-**Your Task:**
+#### Your Task:
 
-#### Part 1 — Explore PostGIS
-1. Open your database management tool (pgAdmin, DBeaver, or `psql`) and connect to your training database.
-2. Inspect the `trees` table:
-   ```sql
-   SELECT id, species, ST_SRID(geom) AS srid, ST_GeometryType(geom) AS geom_type
-   FROM trees
-   LIMIT 10;
+##### Step 1 — Dynamic Styling
+1. Take the vector layer (GeoJSON or WFS) and apply a dynamic style function based on the `type` attribute:
+   ```javascript
+   vectorLayer.setStyle((feature) => {
+     const type = feature.get('type');
+
+     return type === 'hospital'
+       ? hospitalStyle
+       : defaultStyle;
+   });
    ```
-3. Check total feature count:
-   ```sql
-   SELECT count(*) FROM trees;
+
+##### Step 2 — Labels
+2. Extend the style function to display the feature's `name` attribute using `new Text()`:
+   ```javascript
+   new Text({
+     text: feature.get('name'),
+     font: 'bold 12px sans-serif',
+     offsetY: -15
+   });
    ```
 
-#### Part 2 — Spatial Query
-4. Run a proximity query using `ST_DWithin` to find trees within 500 meters of a landmark coordinate:
-   ```sql
-   -- If geom is in EPSG:3857 (meters):
-   SELECT id, species, geom
-   FROM trees
-   WHERE ST_DWithin(
-       geom,
-       ST_Transform(ST_SetSRID(ST_Point(73.8567, 18.5204), 4326), 3857),
-       500
-   );
+##### Step 3 — Select Interaction
+3. Add an OpenLayers `Select` interaction configured to trigger on click:
+   ```javascript
+   const select = new Select({
+     condition: click
+   });
+   map.addInteraction(select);
+
+   select.on('select', (event) => {
+     const feature = event.selected[0];
+
+     if (feature) {
+       console.log('Selected Properties:', feature.getProperties());
+     }
+   });
    ```
-5. Observe how the query utilizes spatial coordinates rather than textual attributes.
 
-#### Part 3 — Publish PostGIS Layer in GeoServer
-6. In GeoServer, navigate to **Stores → Add new Store → PostGIS**.
-7. Connect to your database (`host: localhost`, `database: gis_training`, `schema: public`).
-8. Publish the `trees` table. Verify that the **Declared CRS** is configured (`EPSG:4326` or `EPSG:3857`), compute both Bounding Boxes, and assign a default point style.
-9. Open **Layer Preview** to confirm GeoServer renders the layer.
-
-#### Part 4 — Consume Layer in OpenLayers
-10. In your OpenLayers project, add an `ImageLayer` backed by `ImageWMS` pointing to your published `training:trees` layer.
-11. Overlay it on top of an OpenStreetMap base layer.
-12. Add a map click event listener to execute `wmsSource.getFeatureInfoUrl()` to inspect tree species when clicking on the map.
-
-#### Bonus Challenge
-Create a GeoServer **SQL View** named `critical_trees` that selects trees with `health_status = 'Critical'`, and add it to your OpenLayers map as an independent layer with a distinct style or toggle.
+##### Step 4 — Bonus (Hover Effect)
+4. Add a hover interaction that changes the mouse cursor to `'pointer'` and applies a stroke highlight when the mouse moves over a feature.
 
 ---
 
@@ -461,64 +605,199 @@ Create a GeoServer **SQL View** named `critical_trees` that selects trees with `
 import Map from 'ol/Map.js';
 import View from 'ol/View.js';
 import TileLayer from 'ol/layer/Tile.js';
-import ImageLayer from 'ol/layer/Image.js';
+import VectorLayer from 'ol/layer/Vector.js';
 import OSM from 'ol/source/OSM.js';
-import ImageWMS from 'ol/source/ImageWMS.js';
+import VectorSource from 'ol/source/Vector.js';
+import GeoJSON from 'ol/format/GeoJSON.js';
+import Overlay from 'ol/Overlay.js';
+import Select from 'ol/interaction/Select.js';
+import { click } from 'ol/events/condition.js';
+import { Style, Circle as CircleStyle, Fill, Stroke, Text } from 'ol/style.js';
 import { fromLonLat } from 'ol/proj.js';
 import 'ol/ol.css';
 
-// 1. Base Layer: OpenStreetMap
+// 1. Base Map Layer
 const baseLayer = new TileLayer({
-  source: new OSM(),
-  zIndex: 0
+  source: new OSM()
 });
 
-// 2. PostGIS Layer published via GeoServer WMS
-const postgisWmsSource = new ImageWMS({
-  url: 'http://localhost:8080/geoserver/wms',
-  params: {
-    'LAYERS': 'training:trees',
-    'TRANSPARENT': true,
-    'FORMAT': 'image/png'
-  },
-  serverType: 'geoserver'
-});
-
-const treesLayer = new ImageLayer({
-  source: postgisWmsSource,
-  zIndex: 1
-});
-
-// 3. Initialize Map View
-const map = new Map({
-  target: 'map',
-  layers: [baseLayer, treesLayer],
-  view: new View({
-    center: fromLonLat([73.8567, 18.5204]), // Pune, India sample coordinates
-    zoom: 13
+// 2. Pre-defined Reusable Styles (Natural Earth Populated Places)
+const capitalStyle = new Style({
+  image: new CircleStyle({
+    radius: 9,
+    fill: new Fill({ color: '#D97706' }), // Amber/Gold for National Capitals
+    stroke: new Stroke({ color: '#FFFFFF', width: 2 })
   })
 });
 
-// 4. Feature Attribute Inspection via GetFeatureInfo
-map.on('singleclick', (evt) => {
-  const viewResolution = map.getView().getResolution();
-  const url = postgisWmsSource.getFeatureInfoUrl(
-    evt.coordinate,
-    viewResolution,
-    'EPSG:3857',
-    { 'INFO_FORMAT': 'application/json' }
-  );
+const stateCapitalStyle = new Style({
+  image: new CircleStyle({
+    radius: 7,
+    fill: new Fill({ color: '#2563EB' }), // Blue for Regional / State Capitals
+    stroke: new Stroke({ color: '#FFFFFF', width: 2 })
+  })
+});
 
-  if (url) {
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.features && data.features.length > 0) {
-          const props = data.features[0].properties;
-          alert(`Tree ID: ${props.id}\nSpecies: ${props.species || 'Unknown'}\nStatus: ${props.health_status || 'Normal'}`);
-        }
+const defaultCityStyle = new Style({
+  image: new CircleStyle({
+    radius: 5,
+    fill: new Fill({ color: '#475569' }), // Slate gray for other populated places
+    stroke: new Stroke({ color: '#FFFFFF', width: 1.5 })
+  })
+});
+
+// 3. Dynamic Style Function with Attribute Labels
+const styleFunction = (feature, resolution) => {
+  const featureClass = feature.get('FEATURECLA') || feature.get('featurecla');
+  const base = featureClass === 'Admin-0 capital'
+    ? capitalStyle
+    : (featureClass === 'Admin-1 capital' ? stateCapitalStyle : defaultCityStyle);
+
+  // Show city labels when zoomed in (resolution < 5000 meters/pixel)
+  if (resolution < 5000) {
+    const cityName = feature.get('NAME') || feature.get('name') || '';
+    return new Style({
+      image: base.getImage(),
+      text: new Text({
+        text: cityName,
+        font: 'bold 12px Inter, sans-serif',
+        fill: new Fill({ color: '#0f172a' }),
+        stroke: new Stroke({ color: '#ffffff', width: 3 }),
+        offsetY: -14
       })
-      .catch((err) => console.error('GetFeatureInfo error:', err));
+    });
   }
+
+  return base;
+};
+
+// 4. Vector Dataset (Natural Earth Populated Places Sample)
+// In production, load via URL: url: './data/ne_10m_populated_places.geojson'
+const vectorSource = new VectorSource({
+  features: new GeoJSON().readFeatures({
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { NAME: 'Tokyo', ADM0NAME: 'Japan', FEATURECLA: 'Admin-0 capital', POP_MAX: 37400068 },
+        geometry: { type: 'Point', coordinates: fromLonLat([139.6917, 35.6895]) }
+      },
+      {
+        type: 'Feature',
+        properties: { NAME: 'Delhi', ADM0NAME: 'India', FEATURECLA: 'Admin-0 capital', POP_MAX: 28514000 },
+        geometry: { type: 'Point', coordinates: fromLonLat([77.2090, 28.6139]) }
+      },
+      {
+        type: 'Feature',
+        properties: { NAME: 'Mumbai', ADM0NAME: 'India', FEATURECLA: 'Admin-1 capital', POP_MAX: 19980000 },
+        geometry: { type: 'Point', coordinates: fromLonLat([72.8777, 19.0760]) }
+      },
+      {
+        type: 'Feature',
+        properties: { NAME: 'London', ADM0NAME: 'United Kingdom', FEATURECLA: 'Admin-0 capital', POP_MAX: 9046485 },
+        geometry: { type: 'Point', coordinates: fromLonLat([-0.1278, 51.5074]) }
+      },
+      {
+        type: 'Feature',
+        properties: { NAME: 'New York', ADM0NAME: 'United States', FEATURECLA: 'Populated place', POP_MAX: 8419000 },
+        geometry: { type: 'Point', coordinates: fromLonLat([-74.0060, 40.7128]) }
+      }
+    ]
+  })
+});
+
+const vectorLayer = new VectorLayer({
+  source: vectorSource,
+  style: styleFunction,
+  declutter: true
+});
+
+// 5. Popup Overlay Setup
+const popupContainer = document.getElementById('popup');
+const popupContent = document.getElementById('popup-content');
+const popupCloser = document.getElementById('popup-closer');
+
+const overlay = new Overlay({
+  element: popupContainer,
+  autoPan: { animation: { duration: 250 } }
+});
+
+if (popupCloser) {
+  popupCloser.onclick = () => {
+    overlay.setPosition(undefined);
+    popupCloser.blur();
+    return false;
+  };
+}
+
+// 6. Map Initialization
+const map = new Map({
+  target: 'map',
+  layers: [baseLayer, vectorLayer],
+  overlays: [overlay],
+  view: new View({
+    center: fromLonLat([0, 25]),
+    zoom: 2
+  })
+});
+
+// 7. Select Interaction
+const select = new Select({
+  condition: click,
+  style: new Style({
+    image: new CircleStyle({
+      radius: 12,
+      fill: new Fill({ color: '#E11D48' }), // Highlighted red on selection
+      stroke: new Stroke({ color: '#FFFFFF', width: 3 })
+    })
+  })
+});
+map.addInteraction(select);
+
+select.on('select', (event) => {
+  const feature = event.selected[0];
+
+  if (feature) {
+    const props = feature.getProperties();
+    const pop = props.POP_MAX ? Number(props.POP_MAX).toLocaleString() : 'N/A';
+    popupContent.innerHTML = `
+      <h4 style="margin:0 0 6px 0; font-size:14px;">${props.NAME}</h4>
+      <p style="margin:0 0 4px 0; font-size:12px; color:#475569;"><strong>Country:</strong> ${props.ADM0NAME || 'N/A'}</p>
+      <p style="margin:0 0 4px 0; font-size:12px; color:#475569;"><strong>Classification:</strong> ${props.FEATURECLA || 'N/A'}</p>
+      <p style="margin:0; font-size:12px; color:#475569;"><strong>Population:</strong> ${pop}</p>
+    `;
+    overlay.setPosition(feature.getGeometry().getCoordinates());
+  } else {
+    overlay.setPosition(undefined);
+  }
+});
+
+// 8. Hover Effect (Cursor & Stroke Highlight)
+let hoveredFeature = null;
+const highlightStyle = new Style({
+  image: new CircleStyle({
+    radius: 11,
+    fill: new Fill({ color: '#00E5FF' }),
+    stroke: new Stroke({ color: '#FFFFFF', width: 3 })
+  })
+});
+
+map.on('pointermove', (evt) => {
+  if (evt.dragging) return;
+
+  if (hoveredFeature) {
+    hoveredFeature.setStyle(null);
+    hoveredFeature = null;
+  }
+
+  const hit = map.forEachFeatureAtPixel(evt.pixel, (feat, layer) => {
+    if (layer === vectorLayer && !select.getFeatures().getArray().includes(feat)) {
+      hoveredFeature = feat;
+      feat.setStyle(highlightStyle);
+      return true;
+    }
+  });
+
+  map.getTargetElement().style.cursor = hit ? 'pointer' : '';
 });
 ```

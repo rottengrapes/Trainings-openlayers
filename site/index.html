@@ -295,6 +295,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#training-datasets-free-data-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training Datasets &amp; Free Data Sources
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Training Datasets &amp; Free Data Sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-primary-course-vector-datasets-natural-earth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Primary Course Vector Datasets (Natural Earth)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-primary-course-raster-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Primary Course Raster Datasets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-recommended-free-vector-raster-data-portals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Recommended Free Vector &amp; Raster Data Portals
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#full-day-schedule" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -430,7 +480,7 @@
   <span class="md-ellipsis">
     
   
-    Module 3 - GeoServer & OpenLayers
+    Module 3 - GeoServer & PostGIS
   
 
     
@@ -458,7 +508,7 @@
   <span class="md-ellipsis">
     
   
-    Module 4 - PostGIS & OpenLayers
+    Module 4 - Vector Styling & Interaction
   
 
     
@@ -486,7 +536,7 @@
   <span class="md-ellipsis">
     
   
-    Module 5 - Vector Styling & Interaction
+    Module 5 - Map Interactions & Controls
   
 
     
@@ -678,6 +728,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#training-datasets-free-data-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training Datasets &amp; Free Data Sources
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Training Datasets &amp; Free Data Sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-primary-course-vector-datasets-natural-earth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Primary Course Vector Datasets (Natural Earth)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-primary-course-raster-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Primary Course Raster Datasets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-recommended-free-vector-raster-data-portals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Recommended Free Vector &amp; Raster Data Portals
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#full-day-schedule" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -717,10 +817,11 @@
 <li>Explain the role of Map, View, Layer, Source and Feature in an OpenLayers application.</li>
 <li>Work with projections, resolution, zoom and coordinate transformation.</li>
 <li>Choose between GeoJSON, WMS, WMTS, XYZ and vector tiles for common Web GIS use cases.</li>
-<li>Consume GeoServer services from OpenLayers and understand GetCapabilities and service parameters.</li>
-<li>Understand the PostGIS → GeoServer → OpenLayers architecture and data flow.</li>
+<li>Understand the PostGIS → GeoServer → OpenLayers enterprise architecture and data flow.</li>
+<li>Consume GeoServer WMS/WFS services from OpenLayers with CQL filtering and GetFeatureInfo.</li>
 <li>Create practical vector styles, including attribute-based styling and labels.</li>
-<li>Implement basic feature selection and interaction.</li>
+<li>Implement interactive digitizing (Draw, Modify, Snap) and desktop file Drag &amp; Drop.</li>
+<li>Configure essential map controls (ScaleLine, ZoomSlider, FullScreen, MousePosition, OverviewMap).</li>
 <li>Understand CesiumJS and use ol-cesium to connect 2D and 3D views.</li>
 <li>Understand raster/vector MBTiles and their role in tiled/offline Web GIS.</li>
 <li>Troubleshoot common Web GIS problems using browser developer tools.</li>
@@ -736,6 +837,129 @@
 <li>Basic GIS, CRS/projection and web-service concepts from Phase 1.</li>
 <li>Three questions or problems encountered during self-study.</li>
 </ul>
+<h2 id="training-datasets-free-data-sources">Training Datasets &amp; Free Data Sources</h2>
+<p>Throughout this course, all hands-on exercises and practical modules standardize on <strong><a href="https://www.naturalearthdata.com/">Natural Earth</a></strong> vector and raster datasets. Natural Earth is public domain, globally consistent, lightweight, and comes with rich, clean attributes.</p>
+<h3 id="1-primary-course-vector-datasets-natural-earth">1. Primary Course Vector Datasets (Natural Earth)</h3>
+<p>Download the following vector packages (1:10m or 1:50m scale) to use across Modules 2 through 8:</p>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Geometry</th>
+<th>Attributes of Interest</th>
+<th>Direct Download</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Populated Places</strong> (<code>ne_10m_populated_places</code>)</td>
+<td>Points</td>
+<td><code>NAME</code>, <code>ADM0NAME</code>, <code>POP_MAX</code>, <code>FEATURECLA</code> (Admin-0 capital, city)</td>
+<td><a href="https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_populated_places.zip">Download ZIP (1.6 MB)</a></td>
+</tr>
+<tr>
+<td><strong>Roads &amp; Highways</strong> (<code>ne_10m_roads</code>)</td>
+<td>LineStrings</td>
+<td><code>name</code>, <code>type</code> (Major Highway, Secondary), <code>scalerank</code>, <code>expressway</code></td>
+<td><a href="https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_roads.zip">Download ZIP (15.5 MB)</a></td>
+</tr>
+<tr>
+<td><strong>Admin 0 Countries</strong> (<code>ne_10m_admin_0_countries</code>)</td>
+<td>Polygons</td>
+<td><code>NAME</code>, <code>CONTINENT</code>, <code>POP_EST</code>, <code>GDP_MD</code>, <code>ISO_A2</code></td>
+<td><a href="https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_0_countries.zip">Download ZIP (5.3 MB)</a></td>
+</tr>
+<tr>
+<td><strong>Admin 1 States &amp; Provinces</strong> (<code>ne_10m_admin_1_states_provinces</code>)</td>
+<td>Polygons</td>
+<td><code>name</code>, <code>admin</code>, <code>type_en</code>, <code>postal</code></td>
+<td><a href="https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_1_states_provinces.zip">Download ZIP (14.2 MB)</a></td>
+</tr>
+<tr>
+<td><strong>Rivers &amp; Lakes</strong> (<code>ne_10m_rivers_lake_centerlines</code>)</td>
+<td>LineStrings</td>
+<td><code>name</code>, <code>scalerank</code>, <code>featurecla</code></td>
+<td><a href="https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/physical/ne_10m_rivers_lake_centerlines.zip">Download ZIP (1.8 MB)</a></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Converting Shapefiles to GeoJSON:</strong> Natural Earth downloads contain ESRI Shapefiles (<code>.shp</code>). To convert them into <code>.geojson</code> for OpenLayers or Tippecanoe, use either <code>ogr2ogr</code> or <a href="https://mapshaper.org/">Mapshaper (Web GUI)</a>:
+<div class="highlight"><pre><span></span><code>ogr2ogr<span class="w"> </span>-f<span class="w"> </span>GeoJSON<span class="w"> </span>-t_srs<span class="w"> </span>EPSG:4326<span class="w"> </span>ne_10m_populated_places.geojson<span class="w"> </span>ne_10m_populated_places.shp
+ogr2ogr<span class="w"> </span>-f<span class="w"> </span>GeoJSON<span class="w"> </span>-t_srs<span class="w"> </span>EPSG:4326<span class="w"> </span>ne_10m_roads.geojson<span class="w"> </span>ne_10m_roads.shp
+ogr2ogr<span class="w"> </span>-f<span class="w"> </span>GeoJSON<span class="w"> </span>-t_srs<span class="w"> </span>EPSG:4326<span class="w"> </span>ne_10m_admin_0_countries.geojson<span class="w"> </span>ne_10m_admin_0_countries.shp
+</code></pre></div></p>
+</blockquote>
+<hr />
+<h3 id="2-primary-course-raster-datasets">2. Primary Course Raster Datasets</h3>
+<p>For raster tiling (GDAL, MBTiles/PMTiles in Module 7) and GeoServer raster stores:</p>
+<ul>
+<li><strong>Natural Earth Cross-Blended Hypsometric Tints with Shaded Relief (GeoTIFF):</strong> <a href="https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/50m/raster/NE1_50M_SR_W.zip">Download 1:50m Raster (21.7 MB)</a></li>
+<li><strong>Natural Earth Gray Shaded Relief (GeoTIFF):</strong> <a href="https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/50m/raster/SR_50M.zip">Download 1:50m Shaded Relief (10.3 MB)</a></li>
+</ul>
+<hr />
+<h3 id="3-recommended-free-vector-raster-data-portals">3. Recommended Free Vector &amp; Raster Data Portals</h3>
+<p>When building your own Web GIS projects after this training, bookmark these free data repositories:</p>
+<table>
+<thead>
+<tr>
+<th>Resource</th>
+<th>Data Type</th>
+<th>Best For</th>
+<th>Link</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Natural Earth</strong></td>
+<td>Vector &amp; Raster</td>
+<td>Global cartographic basemaps, boundaries, cultural and physical vectors</td>
+<td><a href="https://www.naturalearthdata.com/downloads/">naturalearthdata.com</a></td>
+</tr>
+<tr>
+<td><strong>GeoBoundaries</strong></td>
+<td>Vector (Boundaries)</td>
+<td>Authoritative open political boundaries (ADM0 through ADM5)</td>
+<td><a href="https://www.geoboundaries.org/">geoboundaries.org</a></td>
+</tr>
+<tr>
+<td><strong>Geofabrik OSM Extracts</strong></td>
+<td>Vector (OSM)</td>
+<td>Pre-packaged OpenStreetMap regional extracts (.osm.pbf, Shapefile)</td>
+<td><a href="https://download.geofabrik.de/">download.geofabrik.de</a></td>
+</tr>
+<tr>
+<td><strong>Overpass Turbo</strong></td>
+<td>Vector (OSM)</td>
+<td>Interactive query builder to filter and export OSM features directly as GeoJSON</td>
+<td><a href="https://overpass-turbo.eu/">overpass-turbo.eu</a></td>
+</tr>
+<tr>
+<td><strong>USGS EarthExplorer</strong></td>
+<td>Raster (Satellite / DEM)</td>
+<td>Free Landsat, Sentinel-2, and SRTM global elevation models</td>
+<td><a href="https://earthexplorer.usgs.gov/">earthexplorer.usgs.gov</a></td>
+</tr>
+<tr>
+<td><strong>OpenTopography</strong></td>
+<td>Raster (Elevation)</td>
+<td>High-resolution Digital Elevation Models (COP30, NASADEM, LiDAR)</td>
+<td><a href="https://opentopography.org/">opentopography.org</a></td>
+</tr>
+<tr>
+<td><strong>NASA Earthdata / GIBS</strong></td>
+<td>Raster (Environmental)</td>
+<td>Near real-time satellite imagery, atmospheric, and climate data</td>
+<td><a href="https://www.earthdata.nasa.gov/">earthdata.nasa.gov</a></td>
+</tr>
+<tr>
+<td><strong>World Bank Open Data</strong></td>
+<td>Spatial / Tabular</td>
+<td>Country-level indicators (GDP, healthcare, energy) joinable to country vectors</td>
+<td><a href="https://data.worldbank.org/">data.worldbank.org</a></td>
+</tr>
+</tbody>
+</table>
 <h2 id="full-day-schedule">Full-day schedule</h2>
 <table>
 <thead>
@@ -763,36 +987,36 @@
 <td>Choose an appropriate service/data mechanism</td>
 </tr>
 <tr>
-<td>10:45–12:00</td>
-<td style="text-align: right;">75 min</td>
-<td>GeoServer + OpenLayers</td>
-<td>GetCapabilities, WMS/WFS/WMTS, workspaces, stores, layers</td>
-<td>Consume real GeoServer services</td>
+<td>10:45–12:30</td>
+<td style="text-align: right;">105 min</td>
+<td>GeoServer &amp; PostGIS Enterprise Integration</td>
+<td>Spatial SQL, publishing, WMS/WFS, CQL filtering, GetFeatureInfo</td>
+<td>Enterprise spatial data pipeline</td>
 </tr>
 <tr>
-<td>12:00–13:00</td>
-<td style="text-align: right;">60 min</td>
-<td>PostGIS + OpenLayers</td>
-<td>Spatial tables, geometry, spatial SQL, publishing</td>
-<td>Trace PostGIS → GeoServer → OpenLayers</td>
-</tr>
-<tr>
-<td>13:00–14:00</td>
+<td>12:30–13:30</td>
 <td style="text-align: right;">60 min</td>
 <td>Lunch Break</td>
 <td>—</td>
 <td>—</td>
 </tr>
 <tr>
-<td>14:00–15:00</td>
+<td>13:30–14:30</td>
 <td style="text-align: right;">60 min</td>
 <td>Vector Styling &amp; Feature Interaction</td>
-<td>Styles, labels, attribute rules, selection</td>
+<td>Styles, labels, thematic classification, selection, popups</td>
 <td>Interactive styled vector layer</td>
 </tr>
 <tr>
-<td>15:00–16:30</td>
-<td style="text-align: right;">90 min</td>
+<td>14:30–15:30</td>
+<td style="text-align: right;">60 min</td>
+<td>Map Interactions &amp; Controls</td>
+<td>Draw, Modify, Drag &amp; Drop, ScaleLine, FullScreen, MousePosition</td>
+<td>Digitizing &amp; control suite application</td>
+</tr>
+<tr>
+<td>15:30–16:30</td>
+<td style="text-align: right;">60 min</td>
 <td>CesiumJS + OpenLayers Integration</td>
 <td>3D globe, terrain, camera, entities, ol-cesium</td>
 <td>2D/3D workflow</td>
